@@ -1,0 +1,8 @@
+{
+  "name": "Token Portrait",
+  "version": "1.0.0",
+  "manifest_version": 1,
+  "description": "Show your selected token as a borderless, click-through portrait in a lower corner. Configure with native token context menus.",
+  "icon": "/icon.svg",
+  "background_url": "/background.html"
+}
