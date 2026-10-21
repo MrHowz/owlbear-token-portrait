@@ -1,26 +1,20 @@
-# QA 1.1.0 inventory
+# QA 1.2.0 inventory
 
-- Assigned portrait differs from token thumbnail; unassigned tokens show nothing.
-- Screen position unchanged on camera pan/zoom; no popover reopen or camera API call.
-- Both corners; 3 sizes; hide/re-enable; deselect; multi-select; deletion; scene reload.
-- Native picker adapter: select, replace, cancel; scene switch while picker pending.
-- Link editor: valid HTTPS image, invalid HTTP, broken image, save metadata without changing token image.
-- Transparent portrait iframe and responsive fit; no border; desktop and small viewport.
-- Exploratory: rapid selection/pan/hide and resize; invalid saved metadata.
+- One native Portrait tool, one default select mode, six native toolbar actions.
+- One token context entry opens the tool group, preserving selected image IDs.
+- All actions filtered to Portrait tool; no action icons leak into other tools.
+- Side and visibility complete cycles; three sizes and tooltips reflect current metadata.
+- Choose/Link/Clear disabled with no selected image; native picker cancel and scene-switch guards.
+- URL entry reuses link.html; no new settings document, menu panel or styling in production.
+- Previous linked portrait, fixed screen position and per-token metadata retained.
+- Cleanup removes context entry, actions, mode, tool and editor popover.
+- Browser adapter checks group open/close, control states and link/picker access.
 
-Local test harness is an SDK adapter, not real Owlbear. Production popover host hit testing and native picker must be checked separately. Portrait iframe cannot promise click-through to the map.
+The local SDK adapter cannot prove actual host toolbar placement or native Move-like drag; these require a signed-in Owlbear host. Production relies on documented native Tool/Mode/Action APIs.
 
-## Results 2026-10-21
-
-- 9 unit tests passed; production TypeScript/Vite build passed.
-- Browser plugin used for mouse controls in SDK adapter at 1280x720.
-- Pan/zoom: portrait bounds identical before/after (x 991.45, y 320, w 205, h 300), popover open count unchanged at 1. No camera transform calls allowed by adapter/tests.
-- Selected Amber token displayed separate Blue artwork. Unassigned/cleared selection hides portrait.
-- Left/right, hide/restore, 180/240/300 sizes, native-library adapter selection, clear mapping, multi-selection, deselection and scene close/reopen exercised.
-- Actual URL editor: rejected HTTP, saved valid HTTPS image via metadata, rejected broken HTTPS image without replacing saved art. Actual production portrait renderer displayed the linked image.
-- Separate screenshot review found no added border, distorted aspect ratio, portrait clipping or overlap with reserved simulated toolbar strips on desktop.
-- Exploratory changes included repeated pan, corner switches, multi-selection, non-image and scene switches.
-- Live Owlbear host integration remains unverified. This session's browser has no existing signed-in Owlbear tab. No live deployment performed.
-
-- Compact 390x620 iframe viewport visually reviewed: portrait fully visible, no frame or distortion, reserved bottom/side areas clear. Numeric layout tests cover 390x844, 844x390, 320x568 and 240x240. Browser DOM scope does not expose nested contentDocument, so nested numeric inspection was unavailable.
-- Browser QA tabs and local dev server closed after verification.
+## Results 2026-10-22
+- TypeScript/Vite build and manifest check passed; 10 unit tests passed.
+- Browser SDK adapter verified the one-entry context launcher, grouped actions, disabled image commands with no selection, side and visibility full cycles, all 3 sizes, cancelled native picker adapter and existing URL input access.
+- All six action icon filters scope to Portrait. Unit test verifies cleanup removes context entry, tool actions, mode and tool.
+- No new production settings HTML/CSS added. Existing link.html is reused.
+- Actual Owlbear host toolbar placement and native drag still require host verification; adapter screenshots are not a host rendering signoff.

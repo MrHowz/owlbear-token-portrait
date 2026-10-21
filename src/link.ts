@@ -41,9 +41,10 @@ document.querySelector("form")!.addEventListener("submit", async event => {
     if (!portrait) throw new Error("ขนาดรูปภาพไม่ถูกต้อง");
     if (invalidated) return;
     await api.scene.items.updateItems(ids, drafts => { for (const item of drafts) item.metadata[PORTRAIT_KEY] = portrait; });
-    status.textContent = "บันทึกแล้ว · ถ้าภาพถูกซ่อน ให้เลือกเมนูมุมซ้ายหรือขวา";
+    status.textContent = "บันทึกแล้ว · ถ้าภาพถูกซ่อน ให้กดแสดงภาพในเครื่องมือ Portrait";
   } catch (error) { status.textContent = error instanceof Error ? error.message : "บันทึกไม่สำเร็จ ตรวจสิทธิ์แก้ไข Token"; }
   finally { save.disabled = invalidated || !ids.length; }
 });
 
 }
+

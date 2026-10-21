@@ -1,4 +1,4 @@
-# Token Portrait 1.1.0
+# Token Portrait 1.2.0
 
 ## เปลี่ยนจาก 1.0.0
 
@@ -11,11 +11,11 @@
 
 ## อัปเดต GitHub และ Cloudflare Pages
 
-1. แตก `token-portrait-source-1.1.0.zip`
+1. แตก `token-portrait-source-1.2.0.zip`
 2. อัปโหลดไฟล์และโฟลเดอร์ภายในไปทับที่ root ของ repository เดิม แล้ว Commit
 3. ตรวจว่ามี `portrait.html`, `link.html`, `background.html` และ `package.json` ที่หน้าแรก
 4. Cloudflare Pages ใช้ Build command `npm run build`, Output `dist`, Root เว้นว่าง
-5. รอ deployment สำเร็จ เปิด manifest URL เดิม ต้องเห็น version `1.1.0`
+5. รอ deployment สำเร็จ เปิด manifest URL เดิม ต้องเห็น version `1.2.0`
 6. โหลดห้อง Owlbear ใหม่ หากข้อมูล Extension ยังเก่า ให้ถอดแล้วเพิ่มด้วย manifest URL เดิม
 
 URL เดิม: https://owlbear-token-portrait.pages.dev/manifest.json
@@ -23,27 +23,30 @@ URL เดิม: https://owlbear-token-portrait.pages.dev/manifest.json
 โฟลเดอร์นี้ยังไม่ได้ push/deploy ขึ้นบัญชี GitHub หรือ Cloudflare ของคุณ
 ไฟล์ deploy ZIP เป็นอีกทางเลือกสำหรับโฮสต์ไฟล์ที่ build แล้ว ส่วน Git integration ให้ใช้ source ZIP
 
-## วิธีใช้
+## ## วิธีใช้
 
-เลือก Token แล้วเปิดเมนูของ Token:
+1. เลือก Token แล้วกด **Portrait** ปุ่มเดียวบน context menu ของ Token
+2. Owlbear จะเปิดเครื่องมือ **Portrait** ในแถบเครื่องมือมาตรฐาน
+3. คำสั่งทั้งหมดอยู่ในกลุ่มเดียวกัน:
 
-- **Portrait · เลือกรูปจากคลัง Owlbear** เปิดตัวเลือกภาพมาตรฐานของ Owlbear แล้วเลือกรูปที่ต้องการ
-- **Portrait · ใส่ลิงก์รูปภาพ** เปิดช่องลิงก์เล็กๆ ใน context menu ใส่ลิงก์ HTTPS ของรูปโดยตรงแล้วกดบันทึก
-- **Portrait · ล้างรูปที่ผูกไว้** ลบเฉพาะการผูก Portrait ไม่ลบรูป Token หรือไฟล์ในคลัง
-- **Portrait · มุมล่างซ้าย / มุมล่างขวา** เลือกตำแหน่งและเปิดภาพกลับมาหากเคยซ่อน
-- **Portrait · ซ่อนภาพ** ปิดการแสดงผลเฉพาะผู้ใช้คนนี้
-- **Portrait · เปลี่ยนขนาด** วนขนาด 180 / 240 / 300 px ปรับเล็กลงเมื่อหน้าจอไม่พอ
+- **ตำแหน่ง** กดสลับซ้าย/ขวา tooltip แจ้งตำแหน่งปัจจุบัน
+- **แสดง/ซ่อน** กดสลับสถานะ tooltip แจ้งสถานะปัจจุบัน
+- **ขนาด** วน 180 / 240 / 300 px พร้อมขนาดปัจจุบันใน tooltip
+- **เลือกรูปจากคลัง Owlbear** ใช้ image picker มาตรฐาน
+- **ใส่ลิงก์รูปภาพ** เปิดช่องลิงก์เดิมที่มีอยู่ ป้อน HTTPS แล้วบันทึก
+- **ล้างรูปที่ผูกไว้** ลบเฉพาะการผูก Portrait
 
-ถ้าเลือกหลาย Token แล้วผูกรูป ภาพเดียวกันจะผูกกับ Token รูปภาพทั้งหมดที่เลือก
-ต้องมีสิทธิ์ UPDATE ของ Token เพื่อกำหนด/ล้างรูป ภาพต้นฉบับและตำแหน่ง Token ไม่ถูกแก้
-เมื่อเลือกหลาย Token จะแสดงภาพปัจจุบันต่อถ้า Token นั้นยังถูกเลือก
-Token ที่ยังไม่มีรูป Portrait จะไม่แสดงภาพ
+เปิดจากไอคอน Portrait ใน toolbar ได้เช่นกัน คำสั่งทั้งหกแสดงเฉพาะเมื่อใช้เครื่องมือ Portrait
+ถ้าไม่ได้เลือก Token รูปภาพ ปุ่มเลือกภาพ/ลิงก์/ล้างรูปจะถูกปิดไว้
+เครื่องมือใช้ select mode ของ Owlbear และตั้งให้ใช้พฤติกรรมลากแบบ Move มาตรฐาน
+รุ่นนี้ไม่มีหน้าตั้งค่าใหม่ ปุ่ม/tooltip/tool menu ถูกวาดโดย Owlbear SDK Tool API
+ส่วนช่อง URL เดิมเป็น HTML ของ Extension ที่ใช้สีตามธีม Owlbear เพราะ SDK ไม่มีช่องป้อน URL สำเร็จรูป
 
-ใช้ PNG/WebP โปร่งใสเมื่อต้องการตัวละครไร้พื้นหลัง ระบบไม่ลบพื้นหลัง/กรอบที่อยู่ในไฟล์ภาพเอง
-URL ต้องเปิดเป็นรูปได้โดยไม่เข้าสู่ระบบ ไม่ใช่ลิงก์หน้าดูไฟล์หรือหน้าเว็บ
-รูปที่เลือกในคลังใช้ URL ของ Owlbear โดยตรง ไม่มีการดาวน์โหลดมาโฮสต์ใหม่
+ต้องมีสิทธิ์แก้ไข Token เพื่อผูก/ล้างรูป เลือกหลาย Token แล้วกำหนดภาพจะผูกภาพเดียวกันกับทั้งหมด
+ภาพเดิมใน Token และการผูก Portrait จากรุ่นก่อนยังใช้ต่อได้ การแสดงผล/ตำแหน่ง/ขนาดเป็นของแต่ละผู้ใช้
+ใช้ PNG/WebP โปร่งใสเมื่อต้องการตัวละครไร้พื้นหลัง และใช้ลิงก์รูปโดยตรงแบบ HTTPS
 
-## ข้อจำกัดและผลทดสอบ
+ข้อจำกัดและผลทดสอบ
 
 - Popover ยึดตำแหน่งหน้าจอ แต่ iframe อาจรับการคลิกในพื้นที่สี่เหลี่ยมของภาพ จึงไม่รับประกัน click-through เหมือนรุ่น Billboard
 - เว้นแถบเครื่องมือด้านข้างและด้านล่างตามขนาดหน้าจอ ไม่อ้างว่าเลี่ยงได้ทุกแผงที่ขยายหรือ Extension อื่น
@@ -51,7 +54,7 @@ URL ต้องเปิดเป็นรูปได้โดยไม่เ�
 - รับ selection ของ Owlbear จึงยังขึ้นกับเครื่องมือ Move/Measure ว่าส่ง selection หรือไม่
 - การผูกภาพเป็น metadata ของฉาก; URL ภาพไม่ควรเป็นลิงก์ลับที่ไม่ต้องการให้ผู้ร่วมฉากเข้าถึง
 - ไม่มีการเพิ่ม animation หรือขยับปาก
-- ทดสอบ unit tests 9 รายการ, build TypeScript และ browser QA ผ่าน SDK adapter
+- ทดสอบ unit tests 10 รายการ, build TypeScript และ browser QA ผ่าน SDK adapter
 - ทดสอบ URL editor และ renderer จริงด้วยลิงก์ HTTPS สำเร็จ และตรวจ HTTP/ลิงก์เสีย
 - ยังไม่ได้ทดสอบ Popover/picker ภายในห้อง Owlbear ที่ลงชื่อเข้าใช้จริง
 
@@ -71,3 +74,5 @@ npm run dev -- --port 5190
 
 API: https://docs.owlbear.rodeo/extensions/apis/popover/
 Image picker: https://docs.owlbear.rodeo/extensions/apis/assets/
+
+

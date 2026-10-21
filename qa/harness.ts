@@ -11,7 +11,29 @@ let items: any[] = [
   {id:"shape",type:"SHAPE",visible:true,metadata:{}},
 ];
 const status = (text: string) => {document.querySelector("#status")!.textContent=text;};
+let nativeMetadata: Record<string, unknown> = {}, toolActive = false;
+const nativeActions: Record<string, any> = {};
+const toolRow = document.createElement("nav");toolRow.id="native-tools";document.querySelector("header")!.append(toolRow);
+function drawTools() {
+  toolRow.replaceChildren();toolRow.hidden=!toolActive;
+  if(!toolActive)return;
+  for(const action of Object.values(nativeActions)){
+    const icon=action.icons.find((icon:any)=>!icon.filter?.metadata||icon.filter.metadata.every((f:any)=>nativeMetadata[f.key]===f.value));
+    if(!icon)continue;
+    const button=document.createElement("button");button.id=`qa-${action.id.split("/").at(-1)}`;
+    button.textContent=icon.label;
+    button.disabled=action.disabled?.metadata?.every((f:any)=>nativeMetadata[f.key]===f.value)??false;
+    button.onclick=()=>action.onClick({},button.id);toolRow.append(button);
+  }
+}
 const api: any = {
+  tool:{
+    create:async(tool:any)=>{nativeMetadata=tool.defaultMetadata;const button=document.createElement("button");button.textContent="Portrait tool";button.onclick=()=>{toolActive=!toolActive;drawTools();};document.querySelector("#menus")!.append(button);},
+    createMode:async()=>{},createAction:async(action:any)=>{nativeActions[action.id]=action;},
+    setMetadata:async(_:string,value:any)=>{nativeMetadata={...nativeMetadata,...value};drawTools();},
+    activateTool:async()=>{toolActive=true;drawTools();},
+    removeAction:async()=>{},removeMode:async()=>{},remove:async()=>{},
+  },
   contextMenu:{
     create:async(menu:any)=>{
       const button=document.createElement("button"); button.textContent=menu.id.split("/").at(-1);
@@ -32,11 +54,17 @@ const api: any = {
     for(const [id,value] of [["art-a",artA],["art-b",artB],["cancel",null]] as const)dialog.querySelector(`#${id}`)!.addEventListener("click",()=>{dialog.close();dialog.remove();resolve(value?[{image:value}]:[]);});
   })},
   notification:{show:async(text:string)=>status(text)},
-  player:{getSelection:async()=>selection,getRole:async()=>"PLAYER",onChange:subscribe("player")},
+  player:{select:async(ids:string[])=>select(ids),getSelection:async()=>selection,getRole:async()=>"PLAYER",onChange:subscribe("player")},
   viewport:{getWidth:async()=>innerWidth,getHeight:async()=>innerHeight,inverseTransformPoint:()=>{throw Error("Camera access forbidden");}},
   popover:{
-    close:async()=>{document.querySelector("#portrait-frame")?.remove();},
+    close:async(id:string)=>{document.querySelector(id.endsWith("/editor")?"#editor":"#portrait-frame")?.remove();},
     open:async(value:any)=>{
+      if(value.url==="/link.html"){
+        localStorage.setItem("qa-target",selection[0]??"");
+        document.querySelector("#editor")?.remove();
+        const frame=document.createElement("iframe");frame.src="/qa/link.html";frame.id="editor";frame.title="Portrait URL";
+        Object.assign(frame.style,{position:"absolute",top:"250px",left:"12px",width:"340px",height:"210px",zIndex:"5",border:"1px solid #777"});document.body.append(frame);return;
+      }
       opens++;status(`Popover opens: ${opens}`);
       document.querySelector("#portrait-frame")?.remove();
       const frame=document.createElement("iframe");frame.id="portrait-frame";frame.title="Linked portrait";
@@ -51,7 +79,7 @@ const api: any = {
   },
   scene:{
     isReady:async()=>ready,onReadyChange:subscribe("ready"),local:{deleteItems:async()=>{}},
-    items:{getItems:async()=>items,onChange:subscribe("items"),updateItems:async(ids:string[],fn:Function)=>{fn(items.filter(i=>ids.includes(i.id)));callbacks.items?.(items);}},
+    items:{getItems:async(ids?:string[])=>ids?items.filter(item=>ids.includes(item.id)):items,onChange:subscribe("items"),updateItems:async(ids:string[],fn:Function)=>{fn(items.filter(i=>ids.includes(i.id)));callbacks.items?.(items);}},
   },
 };
 const controller=createController(api,localStorage); await controller.start();
@@ -71,3 +99,4 @@ document.querySelector("#under")!.addEventListener("click",()=>status("Underlyin
 window.addEventListener("storage",event=>{
   if(event.key==="qa-link-result"&&event.newValue){const data=JSON.parse(event.newValue);const target=items.find(i=>i.id===data.id);if(target){target.metadata[PORTRAIT_KEY]=data.portrait;callbacks.items?.(items);}}
 });
+

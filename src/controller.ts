@@ -1,6 +1,8 @@
 import type OBR from "@owlbear-rodeo/sdk";
-import type { Item, ContextMenuContext } from "@owlbear-rodeo/sdk";
+import type { Item } from "@owlbear-rodeo/sdk";
 import { chooseImage, defaults, ID, layout, settingsFrom, PORTRAIT_KEY, portraitFrom, type Settings } from "./model.ts";
+
+import { createNativeUI } from "./native-ui.ts";
 
 export function createController(api: typeof OBR, storage: Pick<Storage, "getItem" | "setItem">) {
   let settings = { ...defaults };
@@ -13,6 +15,7 @@ export function createController(api: typeof OBR, storage: Pick<Storage, "getIte
   let timer: ReturnType<typeof setTimeout> | undefined;
   const unsubscribe: (() => void)[] = [];
   const menuIds = ["left", "right", "hide", "size", "choose", "link", "clear"];
+  let nativeUI: Awaited<ReturnType<typeof createNativeUI>> | undefined;
   const popoverId = `${ID}/screen`;
   const report = (error: unknown) => {
     console.error("Token Portrait:", error);
@@ -23,6 +26,7 @@ export function createController(api: typeof OBR, storage: Pick<Storage, "getIte
     open = false; signature = "";
   };
   async function draw() {
+    await nativeUI?.sync(settings, ready && items.some(item => item.type === "IMAGE" && selection.includes(item.id)));
     if (disposed || !ready) { await close(); return; }
     const revision = epoch;
     const target = chooseImage(items, selection, previous);
@@ -71,42 +75,41 @@ export function createController(api: typeof OBR, storage: Pick<Storage, "getIte
   async function start() {
     // A previous background instance may have left a screen popover behind.
     await api.popover.close(popoverId);
-    async function menu(key: string, label: string, action: (context: ContextMenuContext) => Promise<void>, edit = false) {
-      await api.contextMenu.create({
-        id: `${ID}/${key}`,
-        icons: [{ icon: `/icons/${key}.svg`, label, filter: { some: [{ key: "type", value: "IMAGE" }], ...(edit ? { permissions: ["UPDATE" as const] } : {}) } }],
-        onClick: context => { void action(context).catch(report); },
-      });
-    }
-    await menu("left", "Portrait · มุมล่างซ้าย", () => change({ side: "left", enabled: true }));
-    await menu("right", "Portrait · มุมล่างขวา", () => change({ side: "right", enabled: true }));
-    await menu("hide", "Portrait · ซ่อนภาพ", () => change({ enabled: false }));
-    await menu("size", "Portrait · เปลี่ยนขนาด เล็ก / กลาง / ใหญ่", async () => {
-      const sizes = [180, 240, 300];
-      const size = sizes[(sizes.indexOf(settings.size) + 1) % sizes.length];
-      await change({ size });
-      await api.notification.show(`Portrait: ${size}px`, "INFO");
-    });
-    await menu("choose", "Portrait · เลือกรูปจากคลัง Owlbear", async context => {
+    // Remove the scattered v1.1 entries when reloading an existing extension.
+    for (const key of menuIds) await api.contextMenu.remove(`${ID}/${key}`);
+    nativeUI = await createNativeUI(api, settings, async (action, elementId) => {
+      if (action === "side") { await change({ side: settings.side === "left" ? "right" : "left" }); return; }
+      if (action === "visibility") { await change({ enabled: !settings.enabled }); return; }
+      if (action === "size") {
+        const sizes = [180, 240, 300];
+        const size = sizes[(sizes.indexOf(settings.size) + 1) % sizes.length];
+        await change({ size });
+        return;
+      }
+      if (!ready || disposed) return;
       const revision = epoch;
-      const ids = context.items.filter(item => item.type === "IMAGE").map(item => item.id);
+      const selected = await api.player.getSelection() ?? [];
+      if (!selected.length) { await api.notification.show("เลือก Token ก่อนใช้คำสั่งนี้", "INFO"); return; }
+      const selectedItems = await api.scene.items.getItems(selected);
+      if (revision !== epoch || !ready || disposed) return;
+      const ids = selectedItems.filter(item => item.type === "IMAGE").map(item => item.id);
+      if (!ids.length) { await api.notification.show("เลือก Token ก่อนใช้คำสั่งนี้", "INFO"); return; }
+      if (action === "link") {
+        // Reuse the existing URL input; do not introduce a new settings panel.
+        await api.popover.open({ id: `${ID}/editor`, url: "/link.html", width: 340, height: 190, anchorElementId: elementId });
+        return;
+      }
+      if (action === "clear") {
+        await api.scene.items.updateItems(ids, drafts => { for (const item of drafts) delete item.metadata[PORTRAIT_KEY]; });
+        return;
+      }
       const [asset] = await api.assets.downloadImages(false);
       if (!asset || revision !== epoch || !ready || disposed) return;
       const portrait = portraitFrom(asset.image);
       if (!portrait) throw new Error("Invalid portrait image");
-      await api.scene.items.updateItems(ids, drafts => {
-        for (const item of drafts) item.metadata[PORTRAIT_KEY] = portrait;
-      });
+      await api.scene.items.updateItems(ids, drafts => { for (const item of drafts) item.metadata[PORTRAIT_KEY] = portrait; });
       await change({ enabled: true });
-    }, true);
-    await api.contextMenu.create({
-      id: `${ID}/link`, icons: [{ icon: "/icons/link.svg", label: "Portrait · ใส่ลิงก์รูปภาพ", filter: { some: [{ key: "type", value: "IMAGE" }], permissions: ["UPDATE"] } }],
-      embed: { url: "/link.html", height: 190 },
-    });
-    await menu("clear", "Portrait · ล้างรูปที่ผูกไว้", async context => {
-      const ids = context.items.filter(item => item.type === "IMAGE").map(item => item.id);
-      await api.scene.items.updateItems(ids, drafts => { for (const item of drafts) delete item.metadata[PORTRAIT_KEY]; });
-    }, true);
+    }, report);
     unsubscribe.push(
       api.player.onChange(player => { selection = player.selection ?? []; role = player.role; void render(); }),
       api.scene.items.onChange(value => { items = value; void render(); }),
@@ -123,7 +126,10 @@ export function createController(api: typeof OBR, storage: Pick<Storage, "getIte
     disposed = true; ++epoch; clearTimeout(timer);
     unsubscribe.forEach(fn => fn());
     await render();
-    for (const key of menuIds) await api.contextMenu.remove(`${ID}/${key}`);
+    await api.popover.close(`${ID}/editor`);
+    await nativeUI?.remove();
   }
   return { start, stop, render, getSettings: () => ({ ...settings }) };
 }
+
+
