@@ -1,0 +1,10 @@
+<!doctype html><html><head><meta charset="UTF-8"><title>Portrait upward motion QA</title><link rel="stylesheet" href="/src/portrait.css"><style>body{width:240px;height:440px}body img.enter{animation:var(--portrait-enter)}pre{position:fixed;left:280px;top:20px;color:#333;background:#eee;padding:16px;font:16px monospace}</style></head><body><img id="portrait" hidden><pre id="result">Measuring production rise animation…</pre><script type="module">
+import { startPortrait } from '/src/portrait.ts';
+const image=document.querySelector('#portrait'), values=[];
+let running=false;
+const sample=()=>{values.push(new DOMMatrix(getComputedStyle(image).transform).m42);if(running)requestAnimationFrame(sample);};
+image.addEventListener('animationstart',()=>{running=true;sample();});
+image.addEventListener('animationend',()=>{running=false;sample();document.querySelector('#result').textContent=JSON.stringify({startY:values[0],minY:Math.min(...values),endY:values.at(-1),samples:values.length,risesFromBelow:values[0]>0&&Math.min(...values)<0&&Math.abs(values.at(-1))<1},null,2);});
+if(!location.hash)location.hash=encodeURIComponent(JSON.stringify({url:'https://qa.invalid/blue.svg',width:300,height:440}));
+startPortrait(()=>'/qa/blue.svg');
+</script></body></html>

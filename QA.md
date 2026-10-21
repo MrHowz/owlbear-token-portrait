@@ -1,3 +1,11 @@
+# QA 1.5.2 inventory
+
+- Host popover transform/anchor origins BOTTOM; bottom coordinate preserves final 8px gap.
+- Image starts below frame at translateY(110%), rises past final position and settles; no negative starting offset.
+- Image waits 500ms for host opening transition; 520ms rise with 4% overshoot/1.5% settle.
+- Reduced motion remains instant. DM single portrait and PLAYER shared visibility behavior unchanged.
+- SDK adapter converts bottom-anchored coordinates back to frame top for geometry parity.
+
 # QA 1.5.1 inventory
 
 - GM has at most one personal portrait, even with its own sharing enabled or another GM presenting.
@@ -62,3 +70,11 @@
 - Production animation module/CSS imported by QA renderer. Reduced-motion default verified: class enter with animation none; explicit QA motion preview used the same production keyframes/timing and reported portrait-rise, 0.44s, final identity transform and opacity 1.
 - Screenshot: `qa/evidence-1.5.1/dm-single.png`. No browser console errors observed.
 - QA motion-preview override is limited to the QA page, not included in the production build. Actual Owlbear embedding/network behavior remains to verify after deployment.
+
+## 1.5.2 results
+
+- All 20 tests pass and production build succeeds. Controller test explicitly asserts both host origins BOTTOM and bottom anchor y=892 in a 900px viewport.
+- Browser production-keyframes measurement (normal motion QA override): first sampled Y=483.619px below final position, overshoot=-17.5946px, final Y=0; 95 samples; risesFromBelow=true.
+- SDK adapter bottom-anchor geometry at 1280x720: portrait top=412, bottom=712 (8px gap).
+- Evidence: `qa/evidence-1.5.2/upward-measurement.png`, `bottom-portrait.png`.
+- Native host transition was not reproduced in a signed-in live Owlbear room. Bottom origin and delayed inner animation address the top-origin host behavior; deployment needs live verification.

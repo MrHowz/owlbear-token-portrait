@@ -39,13 +39,14 @@ export function createController(api: typeof OBR, storage: Pick<Storage, "getIte
     if (!rect) { await closeDisplay(id); return; }
     const next = JSON.stringify([portrait, rect.x, rect.y, rect.width, rect.height]);
     if (next === displays.get(id)) return;
+    // Anchor the host transition to the bottom too, so Owlbear grows upward.
     // Screen coordinates only. NEVER read or compensate for the camera transform.
     await api.popover.open({
       id, url: `/portrait.html#${encodeURIComponent(JSON.stringify(portrait))}`,
       width: Math.ceil(rect.width), height: Math.ceil(rect.height),
-      anchorReference: "POSITION", anchorPosition: { left: Math.floor(rect.x), top: Math.floor(rect.y) },
-      anchorOrigin: { horizontal: "LEFT", vertical: "TOP" },
-      transformOrigin: { horizontal: "LEFT", vertical: "TOP" },
+      anchorReference: "POSITION", anchorPosition: { left: Math.floor(rect.x), top: Math.floor(rect.y) + Math.ceil(rect.height) },
+      anchorOrigin: { horizontal: "LEFT", vertical: "BOTTOM" },
+      transformOrigin: { horizontal: "LEFT", vertical: "BOTTOM" },
       hidePaper: true, disableClickAway: true, marginThreshold: 0,
     });
     displays.set(id, next);

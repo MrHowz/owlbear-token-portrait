@@ -47,6 +47,9 @@ test("screen portrait uses linked art; camera motion never changes/reopens it", 
     assert.equal(s.deleted(), 1);
     assert.equal(s.shown().hidePaper, true);
     assert.equal(s.shown().anchorReference, "POSITION");
+    assert.equal(s.shown().transformOrigin.vertical, "BOTTOM");
+    assert.equal(s.shown().anchorOrigin.vertical, "BOTTOM");
+    assert.equal(s.shown().anchorPosition.top, 892);
     assert.deepEqual(JSON.parse(decodeURIComponent(s.shown().url.split("#")[1])), s.portrait);
     const first = s.shown();
     for (let i=0;i<20;i++) await s.controller.render();
