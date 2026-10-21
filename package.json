@@ -1,6 +1,6 @@
 {
   "name": "token-portrait",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -14,11 +14,18 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@fontsource/roboto": "^5.3.0",
-    "@owlbear-rodeo/sdk": "^3.1.0"
+    "@mui/material": "^6.4.4",
+    "@owlbear-rodeo/sdk": "^3.1.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "playwright": "^1.64.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.4"

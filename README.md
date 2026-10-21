@@ -1,10 +1,21 @@
-# Token Portrait 1.5.2
+# Token Portrait 1.6.0
 
-## หน้าตาแบบ Edit Stats
+## Material UI ภายในเมนู Owlbear
 
-ปรับพื้นหลังแผงให้โปร่งใส กลมกลืนกับเมนูของ Owlbear ใช้ Roboto ช่องขอบมนและปุ่มแถวสีอ่อนตามแนวทางของ Edit Stats
-แผงสูง 340px ใช้โทนมืด/สว่างตาม Theme API และคงทุกคำสั่งไว้ในเมนูสามจุด
-Roboto รวมในไฟล์ build โดยไม่โหลดจาก Google Fonts ระหว่างใช้งาน ใบอนุญาตอยู่ใน public/licenses/roboto.txt
+แผง Portrait ใช้ React + Material UI (MUI) จริง: Select/MenuItem, TextField, Slider, Switch, Button, IconButton และ Tooltip
+เมนูเลือกเป็น MUI ไม่ใช้ native select ของ Windows/เบราว์เซอร์ จึงมีธีมและการใช้คีย์บอร์ดสอดคล้องกัน
+รับ palette ผ่าน `OBR.theme.getTheme()` และ `onChange` เพื่อเปลี่ยนสีตามห้องมืด/สว่าง ใช้ขอบมน 12px ตามแนวทาง Owl Trackers
+ยังฝังในเมนูสามจุด → Portrait ด้วย Context Menu API ของ Owlbear ไม่มี Tool หรือแผงแยก
+แผงสูง 340px ทดสอบความกว้าง 240/280/320px; พื้นหลัง iframe โปร่งใส ฟอนต์ Roboto รวมใน build
+คอนโทรลภายในมาจากไลบรารี MUI ที่ Extension อื่นใช้ ไม่ใช่คอนโทรลที่ SDK ของ Owlbear สร้างให้โดยตรง
+
+แหล่งอ้างอิงแนวทาง:
+- https://github.com/SeamusFinlayson/owl-trackers/blob/main/src/components/AddTrackerButton.tsx
+- https://github.com/SeamusFinlayson/owl-trackers/blob/main/src/getTheme.ts
+- https://github.com/owlbear-rodeo/initiative-tracker/blob/main/src/PluginThemeProvider.tsx
+- https://docs.owlbear.rodeo/extensions/apis/theme/
+
+ใบอนุญาตฟอนต์และ dependencies รวมอยู่ใน `public/licenses/`
 
 ## ใช้จากเมนูสามจุดของ Token
 
@@ -21,16 +32,16 @@ Roboto รวมในไฟล์ build โดยไม่โหลดจาก
 
 รุ่นนี้ไม่ลงทะเบียน Tool, Mode หรือ Action ในแถบเครื่องมือด้านข้าง
 เมนู Portrait ใช้ `OBR.contextMenu` พร้อม `embed` ซึ่งทำให้ Owlbear แสดงเป็นเมนูย่อยแบบลูกศร
-กรอบและการเปิด/ปิดเมนูจัดการโดย Owlbear ส่วนช่องควบคุมภายในเป็นฟอร์มเรียบๆ ใช้สีตาม Theme API
+กรอบและการเปิด/ปิดเมนูจัดการโดย Owlbear ส่วนช่องควบคุมภายในใช้ Material UI และสีตาม Theme API
 SDK ไม่มี API ที่สร้างช่องตั้งค่าภายใน submenu ให้ทั้งหมดโดยตรง จึงต้องใช้ embedded controls
 ไม่มีหน้าต่างตั้งค่าแยก และการเปิดเมนูไม่เปลี่ยนเครื่องมือที่กำลังใช้งาน
 
 ## อัปเดต GitHub / Cloudflare
 
-1. แตก `token-portrait-source-1.5.2.zip`
+1. แตก `token-portrait-source-1.6.0.zip`
 2. อัปโหลดไฟล์และโฟลเดอร์ภายในทับที่ root ของ repository เดิม แล้ว Commit
 3. Cloudflare Pages ใช้ build command `npm run build`, output `dist`, root เว้นว่าง
-4. รอ deploy สำเร็จ ตรวจ manifest URL เดิมให้แสดง version `1.5.2`
+4. รอ deploy สำเร็จ ตรวจ manifest URL เดิมให้แสดง version `1.6.0`
 5. โหลดห้อง Owlbear ใหม่ เพื่อยกเลิก background รุ่นเก่าและรับเมนูใหม่
 
 มีการล้าง toolbar registration จากรุ่น 1.2 ระหว่างเริ่มทำงาน

@@ -1,3 +1,14 @@
+# QA 1.6.0 inventory
+
+- Replace handwritten controls with real MUI Select/MenuItem, TextField, Slider, Switch, Button, IconButton and Tooltip inside the same context embed.
+- Palette follows OBR Theme API in dark/light mode; transparent iframe background preserved. No sidebar Tool.
+- Dropdown renders themed MUI options rather than a native OS select; keyboard navigation works and menu fits iframe.
+- Preferences: side, arbitrary numeric sizes/clamping, slider commit, personal visibility and persistence.
+- Artwork: native asset picker choose/cancel, HTTPS save validation, clear; binding keeps original selection.
+- Sharing toggle DM-only and role-checked; controller privacy/DM-one-portrait behavior unchanged.
+- Fit 240/280/320px widths, both themes; status/error messages readable and no clipping.
+- Regression tests/build plus browser UI actions and screenshots.
+
 # QA 1.5.2 inventory
 
 - Host popover transform/anchor origins BOTTOM; bottom coordinate preserves final 8px gap.
@@ -78,3 +89,15 @@
 - SDK adapter bottom-anchor geometry at 1280x720: portrait top=412, bottom=712 (8px gap).
 - Evidence: `qa/evidence-1.5.2/upward-measurement.png`, `bottom-portrait.png`.
 - Native host transition was not reproduced in a signed-in live Owlbear room. Bottom origin and delayed inner animation address the top-origin host behavior; deployment needs live verification.
+
+## 1.6.0 browser results
+
+- Actual MUI dropdown list/options verified in production panel via local SDK adapter; mouse and ArrowUp/Enter selected the opposite side.
+- Numeric 537 updated portrait; 5000 clamped to 1600. Slider Home/ArrowRight committed 32/33. Size 300 persisted after reload.
+- Personal display off closed portrait; GM share switch updated state and no second GM portrait appeared.
+- Native assets picker adapter chose Amber, clear removed artwork, cancel preserved unassigned state, Blue restored artwork. Unsafe HTTP link rejected with status message.
+- PLAYER view had no DM control and still received shared portrait.
+- Panel content height 299px within 340px embed at dark 320/240px and light 280px; no horizontal overflow. Dropdown appearance and theme contrast reviewed visually.
+- Evidence: `qa/evidence-1.6.0/mui-dropdown.png`, `mui-themes.png`.
+- Fixed initial palette fallback before Theme API resolves; final browser run has no component render errors.
+- SDK/host embedding and live multi-user behavior remain to verify after deployment. Existing SDK uuid audit advisory is unchanged; new UI packages introduced no additional audit advisories.
