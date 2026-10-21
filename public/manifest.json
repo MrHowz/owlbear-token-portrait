@@ -2,7 +2,7 @@
   "name": "Token Portrait",
   "version": "1.1.0",
   "manifest_version": 1,
-  "description": "Fixed screen portraits linked to tokens. Choose artwork from Owlbear's image library or an HTTPS image URL using token context menus.",
+  "description": "Fixed screen portraits for selected tokens. Choose artwork from Owlbear storage or an HTTPS image link.",
   "icon": "/icon.svg",
   "background_url": "/background.html"
 }
