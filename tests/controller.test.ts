@@ -177,15 +177,20 @@ test("shared portraits fail closed for hidden, missing, unlinked, deselected and
     s.handlers.ready(false); await s.controller.render(); assert.equal(s.shared(),undefined);
   } finally { await s.controller.stop(); }
 });
-test("GM sees no shared portrait for its own hidden token, role downgrade disables sharing", async () => {
+test("GM keeps only its personal corner while sharing, including after hide and role changes", async () => {
   const s = setup("GM"); s.api.player.getMetadata = async () => ({[SHARE_KEY]:true});
   try {
-    await s.controller.start(); assert.ok(s.shown()); assert.ok(s.shared());
+    await s.controller.start(); assert.ok(s.shown()); assert.equal(s.shared(),undefined);
+    s.handlers.party([gm()]); await s.controller.render(); assert.equal(s.shared(),undefined);
     s.handlers.items([{...s.items[0],visible:false}]); await s.controller.render();
     assert.ok(s.shown()); assert.equal(s.shared(),undefined);
-    s.handlers.items(s.items); await s.controller.render(); assert.ok(s.shared());
+    s.handlers.items(s.items);
     s.handlers.player(gm({id:"self",connectionId:"self-connection",role:"PLAYER"})); await s.controller.render();
-    assert.equal(s.shared(),undefined);
+    assert.ok(s.shared());
+    s.handlers.player(gm({id:"self",connectionId:"self-connection",role:"GM"})); await s.controller.render();
+    assert.ok(s.shown()); assert.equal(s.shared(),undefined);
+    s.handlers[`broadcast:${PREF_COMMAND}`]({data:{side:"left",size:300,enabled:false}}); await settle();
+    assert.equal(s.shown(),undefined); assert.equal(s.shared(),undefined);
   } finally { await s.controller.stop(); }
 });
 test("late join loads GM state and current scene items without broadcasting artwork", async () => {

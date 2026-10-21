@@ -1,3 +1,12 @@
+# QA 1.5.1 inventory
+
+- GM has at most one personal portrait, even with its own sharing enabled or another GM presenting.
+- PLAYER retains personal + shared art, opposite corners and hidden-token protections.
+- Role change PLAYER to GM closes the extra shared popover; disabling personal display leaves no GM preview.
+- Production portrait renderer animates upward after image load, slight overshoot, 440ms; final transform identity.
+- Pan/zoom does not restart animation; broken images remain hidden; reduced-motion skips animation.
+- QA renderer imports production module/CSS with only artwork URLs mapped to local samples.
+
 # QA 1.5.0 inventory
 
 - DM-only share toggle in existing Portrait submenu; no sidebar tool.
@@ -45,3 +54,11 @@
 - Dark 320/240px and light 280px panels: content height 313px within 340px embed, no horizontal overflow; screenshots reviewed.
 - Evidence: `qa/evidence-1.5.0/dm-menu.png`, `player-opposite.png`, `dm-menu-fit.png`.
 - Local SDK adapter only; actual multi-client Owlbear host, network timing and native embedding remain to verify after deployment. All participants must load the updated extension.
+
+## 1.5.1 results
+
+- 20 tests passed, including GM single personal display with sharing enabled, other GM presenting, hidden tokens, PLAYER-to-GM role transition and personal display disabled. PLAYER sharing protections and opposite-side behavior still pass.
+- Browser adapter: DM sharing enabled with personal=true/shared=false; pan left popover opens at 1. PLAYER regression showed personal=true/shared=true.
+- Production animation module/CSS imported by QA renderer. Reduced-motion default verified: class enter with animation none; explicit QA motion preview used the same production keyframes/timing and reported portrait-rise, 0.44s, final identity transform and opacity 1.
+- Screenshot: `qa/evidence-1.5.1/dm-single.png`. No browser console errors observed.
+- QA motion-preview override is limited to the QA page, not included in the production build. Actual Owlbear embedding/network behavior remains to verify after deployment.

@@ -56,7 +56,8 @@ export function createController(api: typeof OBR, storage: Pick<Storage, "getIte
     const revision = epoch, generation = stateRevision;
     const target = chooseImage(items, selection, previous);
     previous = target?.id;
-    const shared = sharedTarget(items, [self, ...party]);
+    // GMs keep one personal portrait; sharing still reaches PLAYER clients.
+    const shared = role === "GM" ? undefined : sharedTarget(items, [self, ...party]);
     // Close a no-longer-visible shared portrait before any asynchronous open.
     if (!shared) await closeDisplay(sharedId);
     await display(popoverId, settings.enabled && (target?.visible || role === "GM") ? target : undefined, settings, revision, generation, !!shared);
