@@ -14,6 +14,8 @@ export function portraitFrom(value: unknown): Portrait | undefined {
   } catch { return; }
 }
 export type Settings = { side: "left" | "right"; enabled: boolean; size: number };
+export const MIN_SIZE = 32;
+export const MAX_SIZE = 1600;
 export const defaults: Settings = { side: "right", enabled: true, size: 300 };
 
 export function settingsFrom(value: unknown): Settings {
@@ -21,7 +23,8 @@ export function settingsFrom(value: unknown): Settings {
   return {
     side: v.side === "left" ? "left" : "right",
     enabled: v.enabled !== false,
-    size: [180, 240, 300].includes(v.size!) ? v.size! : 300,
+    size: typeof v.size === "number" && Number.isFinite(v.size)
+      ? Math.min(MAX_SIZE, Math.max(MIN_SIZE, Math.round(v.size))) : defaults.size,
   };
 }
 
@@ -33,15 +36,19 @@ export function chooseImage(items: Item[], selection: string[], previous?: strin
 }
 
 export function layout(width: number, height: number, imageWidth: number, imageHeight: number, settings: Settings) {
-  // Reserve the bottom dock and both side tool strips, even on narrow screens.
+  // Use the space beside the bottom dock on desktop, so the portrait can sit
+  // at the bottom edge without covering it. Narrow screens need to sit above it.
   const sideGap = width < 600 ? 64 : 84;
-  const bottomGap = height < 500 ? 76 : 100;
-  const availableWidth = width - sideGap * 2;
+  const cornerWidth = (width - 480) / 2 - sideGap - 8;
+  const fitsBesideDock = cornerWidth >= 160;
+  const bottomGap = fitsBesideDock ? 8 : (height < 500 ? 76 : 100);
+  const availableWidth = fitsBesideDock ? cornerWidth : width - sideGap * 2;
   const availableHeight = height - bottomGap - 80;
   if (![width, height, imageWidth, imageHeight].every(Number.isFinite) ||
       availableWidth < 48 || availableHeight < 48 || imageWidth <= 0 || imageHeight <= 0) return undefined;
-  const ratio = Math.min(settings.size / imageHeight, Math.min(settings.size, availableWidth * 0.65) / imageWidth,
-    availableHeight * 0.65 / imageHeight);
+  const size = settingsFrom(settings).size;
+  const ratio = Math.min(size / imageHeight, Math.min(size, availableWidth) / imageWidth,
+    availableHeight / imageHeight);
   const w = imageWidth * ratio;
   const h = imageHeight * ratio;
   return {

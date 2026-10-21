@@ -2,8 +2,9 @@
 <fieldset id="preferences" disabled>
   <div class="settings-row">
     <label class="setting">ตำแหน่ง<select id="side" aria-label="ตำแหน่ง"><option value="left">ซ้ายล่าง</option><option value="right">ขวาล่าง</option></select></label>
-    <label class="setting">ขนาด<select id="size" aria-label="ขนาด"><option value="180">เล็ก · 180px</option><option value="240">กลาง · 240px</option><option value="300">ใหญ่ · 300px</option></select></label>
+    <label class="setting">ขนาด (px)<input id="size" type="number" min="32" max="1600" step="1" value="300" inputmode="numeric" aria-label="ขนาด (พิกเซล)" title="ปรับได้ตั้งแต่ 32 ถึง 1600 พิกเซล"></label>
   </div>
+  <input id="size-range" type="range" min="32" max="1600" step="1" value="300" aria-label="เลื่อนปรับขนาด" title="เลื่อนปรับขนาด หรือกรอกตัวเลขด้านบน">
   <label class="visibility-row" title="แสดงหรือซ่อนภาพ Portrait">
     <input type="checkbox" id="enabled" aria-label="แสดงภาพ Portrait">
     <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="eye-slash" d="m3 3 18 18"/></svg>

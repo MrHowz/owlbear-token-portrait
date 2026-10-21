@@ -24,18 +24,20 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .settings-row { display: flex; gap: 8px; }
 .setting { display: block; min-width: 0; color: var(--muted,rgba(255,255,255,.7)); font-size: 10px; font-weight: 500; letter-spacing: .2px; }
 .settings-row .setting { flex: 1; text-align: center; }
-select,input[type="url"] {
+select,input[type="url"],input[type="number"] {
   width: 100%; min-width: 0; height: 32px; border: 0; border-radius: 10px;
   outline: 2px solid var(--outline); outline-offset: -2px;
   color: var(--text,#fff); background: var(--field); font: inherit;
   transition: outline-color .1s,background-color .1s;
 }
 select { margin-top: 3px; padding: 0 4px; text-align: center; font-size: 13px; letter-spacing: 0; }
+input[type="number"] { margin-top: 3px; padding: 0 6px; text-align: center; font-size: 13px; letter-spacing: 0; }
+#size-range { display: block; width: 100%; height: 16px; margin: 5px 0 0; accent-color: var(--primary,#bb99ff); cursor: ew-resize; }
 option { color: var(--text,#fff); background: var(--paper,#3d4051); }
 input[type="url"] { padding: 0 10px; font-size: 12px; }
 input::placeholder { color: var(--muted,rgba(255,255,255,.7)); opacity: .8; }
-select:hover,input[type="url"]:hover { outline-color: var(--outline-hover); }
-select:focus-visible,input[type="url"]:focus-visible { outline-color: var(--primary,#bb99ff); }
+select:hover,input[type="url"]:hover,input[type="number"]:hover { outline-color: var(--outline-hover); }
+select:focus-visible,input[type="url"]:focus-visible,input[type="number"]:focus-visible { outline-color: var(--primary,#bb99ff); }
 button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 button:focus-visible,.visibility-row:has(input:focus-visible) { outline: 2px solid var(--primary,#bb99ff); outline-offset: -2px; }
 .menu-row,.visibility-row {

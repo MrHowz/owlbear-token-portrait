@@ -43,7 +43,7 @@ export function createController(api: typeof OBR, storage: Pick<Storage, "getIte
     await api.popover.open({
       id: popoverId, url: `/portrait.html#${encodeURIComponent(JSON.stringify(portrait))}`,
       width: Math.ceil(rect.width), height: Math.ceil(rect.height),
-      anchorReference: "POSITION", anchorPosition: { left: rect.x, top: rect.y },
+      anchorReference: "POSITION", anchorPosition: { left: Math.floor(rect.x), top: Math.floor(rect.y) },
       anchorOrigin: { horizontal: "LEFT", vertical: "TOP" },
       transformOrigin: { horizontal: "LEFT", vertical: "TOP" },
       hidePaper: true, disableClickAway: true, marginThreshold: 0,

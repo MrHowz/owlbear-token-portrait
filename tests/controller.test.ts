@@ -111,7 +111,7 @@ test("one embedded context submenu registers no sidebar tools and preserves acti
   try {
     await s.controller.start();
     assert.deepEqual(Object.keys(s.menus),[`${ID}/open`]);
-    assert.deepEqual(s.menus[`${ID}/open`].embed,{url:"/panel.html",height:280});
+    assert.deepEqual(s.menus[`${ID}/open`].embed,{url:"/panel.html",height:300});
     assert.equal(s.menus[`${ID}/open`].onClick,undefined);
     assert.equal(s.activeTool(),"move");
     assert.equal(created,0);
@@ -142,4 +142,5 @@ test("binding prevents writing to a changed or empty selection",async()=>{
   const empty=await createPortraitBinding(s.api);
   try {assert.equal(empty.ids.length,0);await assert.rejects(empty.save(null),/เลือก Token/);}finally{empty.dispose();}
 });
+
 

@@ -5,7 +5,8 @@ import { createPortraitBinding } from "./binding";
 import { PREF_COMMAND, PREF_REQUEST, PREF_STATE } from "./context-ui";
 export function startPanel(api: typeof OBR) {
   const side = document.querySelector<HTMLSelectElement>("#side")!;
-  const size = document.querySelector<HTMLSelectElement>("#size")!;
+  const size = document.querySelector<HTMLInputElement>("#size")!;
+  const sizeRange = document.querySelector<HTMLInputElement>("#size-range")!;
   const enabled = document.querySelector<HTMLInputElement>("#enabled")!;
   const input = document.querySelector<HTMLInputElement>("#url")!;
   const preferences = document.querySelector<HTMLFieldSetElement>("#preferences")!;
@@ -16,7 +17,7 @@ export function startPanel(api: typeof OBR) {
   let busy = false, disposed = false;
   const cleanups: (() => void)[] = [];
   function reflect(value: unknown) {
-    settings = settingsFrom(value); side.value = settings.side; size.value = String(settings.size); enabled.checked = settings.enabled;
+    settings = settingsFrom(value); side.value = settings.side; size.value = String(settings.size); sizeRange.value = String(settings.size); enabled.checked = settings.enabled;
   }
   function theme(value: Theme) {
     document.documentElement.dataset.theme = value.mode.toLowerCase();
@@ -29,10 +30,14 @@ export function startPanel(api: typeof OBR) {
   }
   async function changeSettings() {
     const previous = settings;
-    try { await updateSettings(settingsFrom({side:side.value,size:Number(size.value),enabled:enabled.checked})); }
+    try { await updateSettings(settingsFrom({side:side.value,size:size.value === "" ? settings.size : size.valueAsNumber,enabled:enabled.checked})); }
     catch { reflect(previous); status.textContent="บันทึกการตั้งค่าไม่สำเร็จ"; }
   }
   side.addEventListener("change", changeSettings); size.addEventListener("change", changeSettings); enabled.addEventListener("change", changeSettings);
+  sizeRange.addEventListener("input", () => { size.value = sizeRange.value; });
+  // Commit on release (or a keyboard step), avoiding a flood of SDK messages.
+  sizeRange.addEventListener("change", changeSettings);
+  size.addEventListener("keydown", event => { if (event.key === "Enter") { event.preventDefault(); void changeSettings(); } });
   async function run(action: () => Promise<void>) {
     if (busy || !binding || disposed) return;
     busy = true; artwork.disabled = true;

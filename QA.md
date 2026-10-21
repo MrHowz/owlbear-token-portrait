@@ -1,22 +1,23 @@
-# QA 1.3.1 inventory
+# QA 1.4.0 inventory
 
-- Compare reference Edit Stats visual conventions: transparent body, Roboto, 8/10px corner radii, faint filled groups, 34px ghost rows, 32px outlined inputs, 8px side padding.
-- Embedded height reduced from 360 to 280px; no extra solid panel background.
-- All existing context-menu controls retain behavior and accessible names.
-- Show/hide checkbox remains keyboard accessible through the full eye-icon row.
-- Save icon has accessible name and tooltip; native selects retain keyboard navigation.
-- Dark theme at 320px and 240px, light at 280px: screenshot and numeric bounds.
-- Picker, URL save/error, visibility, side and size controls exercised through the production panel in SDK adapter.
-- Production assets bundle Roboto locally; no Google Fonts request required. OFL license included.
-- Existing 11 unit checks and build/manifest validation.
-- Actual host iframe placement remains Owlbear-controlled; local adapter verifies panel styling.
+- Desktop: 8px bottom gap, stable screen placement during pan/zoom.
+- Preserve reserved side strips and central 480px bottom dock on desktop; narrow screens keep vertical dock clearance.
+- Continuous integer sizes from 32 to 1600px: number input, Enter/blur commit, native slider and keyboard steps.
+- Slider updates the number while dragging and commits SDK changes on release.
+- Old 180/240/300 preferences remain valid; invalid/NaN/out-of-range values normalize safely.
+- Large portraits preserve aspect ratio and fit the available corner; no forced crop.
+- All controls remain in the existing styled token context submenu; height 300px.
+- Browser flow: numeric arbitrary size, small/large limits, slider keyboard, persistence, side switch, hide/restore, pan stability.
+- Visual: desktop small/default/large and menu at dark 240/320px and light 280px width.
+- Actual Owlbear toolbar geometry is not exposed by the SDK; the central dock reservation is conservative, not dynamic detection of every extension panel.
 
-## Results 2026-10-22
-- Compared primary reference source from https://github.com/SeamusFinlayson/Bubbles-for-Owlbear-Rodeo (StatsMenuApp.tsx, editStatsStyle.css, NameInput.tsx, tailwind.config.js). Recreated its general visual conventions, without depending on that extension.
-- Browser pass verified transparent canvas; an initial dark color-scheme canvas mismatch was found and fixed by using normal document color-scheme with explicit themed controls.
-- Dark 320px and 240px, light 280px: document width equals scroll width; content height 254px and status bottom 250px fit within 280px. Screenshots reviewed without clipping, overflow or low-contrast text.
-- Mouse row click and keyboard Space both toggled visibility correctly. Side selection full cycle and native library adapter cancel passed. Save icon submitted the form and displayed HTTP validation feedback.
-- All existing accessible names retained; save icon includes accessible name and tooltip. Reduced-motion preference respected.
-- 11 existing unit checks passed; final build/manifest validation passed.
-- No new live deployment or host UI modification performed. Evidence: qa/evidence-1.3.1/themes.png and portrait-panel.png.
-- Temporary QA tabs and dev server closed after checks.
+## Results
+
+- 14 unit/controller/binding tests passed; TypeScript and production Vite build passed.
+- Browser SDK adapter: numeric 64/537/1600, clamping 0 to 32 and 5000 to 1600; slider drag, Home/End and single-pixel keyboard increments verified.
+- Numeric size persisted after reload; pan/zoom left portrait bounds and popover-open count unchanged.
+- Desktop layout reserves the bottom dock and uses an 8px bottom gap; popover coordinates round down to avoid fractional-height overshoot.
+- Panel fit: no horizontal overflow at dark 240/320px and light 280px; content height 275px within 300px embed.
+- Large requested sizes auto-fit to available corner while preserving image aspect ratio.
+- Evidence: `qa/evidence-1.4.0/size-controls.png`, `small.png`, `large-bottom.png`.
+- Browser results use the local SDK adapter, not the live signed-in Owlbear host. Host embedding/image-picker lifecycle still require checking after deployment.
