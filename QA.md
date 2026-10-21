@@ -1,3 +1,11 @@
+# QA 1.6.2 inventory
+
+- Content ResizeObserver measures root (not body/MUI portals), debounces and reports only changed heights locally.
+- Background upserts existing context menu height without replacing URL or registering extra tools/items.
+- DM and PLAYER fit to their actual content, status wrap grows then shrinks the embed.
+- Opening Select/Tooltip does not expand the embed; duplicate/invalid height input ignored and subscriptions clean up.
+- Narrow 240px and standard 320px panels retain bottom padding and no content clipping.
+
 # QA 1.6.1 inventory
 
 - Live deployed /panel confirmed blank with TypeError null.addEventListener in old panel-C-jx5WTw.js, while HTML contained the new root div.
@@ -116,3 +124,11 @@
 - 20 regression tests passed, manifest 1.6.1 valid and TypeScript/Vite build successful.
 - Source archive includes both src/panel.ts compatibility shim and src/panel.tsx implementation for overwrite-only GitHub upload.
 - Evidence: qa/evidence-1.6.1/production-panel.png. Deployed site was inspected read-only and has not been updated by this task.
+
+## 1.6.2 results
+
+- 21 tests passed including content-height message validation, duplicate suppression, shrink/grow and cleanup.
+- Browser SDK adapter: DM height 299px at 320/240px width; opening MUI dropdown retained 299px height.
+- At 240px, two-line share status grew frame to 313px matching 312.85px content; short status shrank frame to 299px.
+- PLAYER without DM switch measured 265px. No browser errors. Evidence: qa/evidence-1.6.2/compact.png.
+- Live host menu upsert behavior still needs verification after deployment; same menu ID and embed URL retained, no remove/recreate cycle.

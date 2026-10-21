@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createController } from "../src/controller.ts";
 import { ID, PORTRAIT_KEY, SHARE_KEY, portraitFrom } from "../src/model.ts";
 import { createPortraitBinding } from "../src/binding.ts";
-import { PREF_COMMAND, PREF_REQUEST, PREF_STATE } from "../src/context-ui.ts";
+import { PANEL_HEIGHT, PREF_COMMAND, PREF_REQUEST, PREF_STATE } from "../src/context-ui.ts";
 function setup(role = "PLAYER") {
   const handlers: Record<string, Function> = {}, menus: Record<string, any> = {}, actions: Record<string, any> = {}, modes: Record<string, any> = {}, tools: Record<string, any> = {}; let toolMetadata: any = {}, activeTool = "move";
   const shownById = new Map<string, any>();
@@ -103,8 +103,8 @@ test("cancelled picker and scene change while picker is open never write a mappi
   } finally { binding.dispose(); await s.controller.stop(); }
 });
 test("reject unsafe links and malformed dimensions", () => {
-  for (const url of ["http://example.com/a.png","javascript:alert(1)","data:image/svg+xml,x","https://user:password@example.com/a.png"]) assert.equal(portraitFrom({url,width:200,height:340}),undefined);
-  assert.equal(portraitFrom({url:"https://example.com/a.png",width:NaN,height:340}),undefined);
+  for (const url of ["http://example.com/a.png","javascript:alert(1)","data:image/svg+xml,x","https://user:password@example.com/a.png"]) assert.equal(portraitFrom({url,width:200,height:300}),undefined);
+  assert.equal(portraitFrom({url:"https://example.com/a.png",width:NaN,height:300}),undefined);
 });
 
 
@@ -116,7 +116,7 @@ test("one embedded context submenu registers no sidebar tools and preserves acti
   try {
     await s.controller.start();
     assert.deepEqual(Object.keys(s.menus),[`${ID}/open`]);
-    assert.deepEqual(s.menus[`${ID}/open`].embed,{url:"/panel.html",height:340});
+    assert.deepEqual(s.menus[`${ID}/open`].embed,{url:"/panel.html",height:300});
     assert.equal(s.menus[`${ID}/open`].onClick,undefined);
     assert.equal(s.activeTool(),"move");
     assert.equal(created,0);
@@ -218,4 +218,21 @@ test("visibility change during viewport lookup cannot open stale shared artwork"
     release(1400); await s.controller.render();
     assert.equal(s.shared(),undefined); assert.equal(s.opens(),opens);
   } finally { await s.controller.stop(); }
+});
+
+test("context embed follows measured content height, rejects malformed input and stops after cleanup", async () => {
+  const s=setup(); let registrations=0;
+  const create=s.api.contextMenu.create;
+  s.api.contextMenu.create=async(menu:any)=>{registrations++;await create(menu);};
+  await s.controller.start();
+  const resize=s.handlers[`broadcast:${PANEL_HEIGHT}`];
+  try {
+    resize({data:299}); await settle(); assert.equal(s.menus[`${ID}/open`].embed.height,299);
+    const count=registrations;
+    for (const data of [299,"400",null,{},NaN,Infinity]) resize({data});
+    await settle(); assert.equal(registrations,count);
+    resize({data:313}); await settle(); assert.equal(s.menus[`${ID}/open`].embed.height,313);
+    resize({data:265}); await settle(); assert.equal(s.menus[`${ID}/open`].embed.height,265);
+  } finally {await s.controller.stop();}
+  resize({data:400}); await settle(); assert.equal(Object.keys(s.menus).length,0);
 });

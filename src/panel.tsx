@@ -21,7 +21,7 @@ import Typography from "@mui/material/Typography";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { ID, SHARE_KEY, defaults, MIN_SIZE, MAX_SIZE, portraitFrom, settingsFrom, type Settings } from "./model";
 import { createPortraitBinding } from "./binding";
-import { PREF_COMMAND, PREF_REQUEST, PREF_STATE } from "./context-ui";
+import { PANEL_HEIGHT, PREF_COMMAND, PREF_REQUEST, PREF_STATE } from "./context-ui";
 
 type Binding = Awaited<ReturnType<typeof createPortraitBinding>>;
 function Icon({ kind }: { kind: "image" | "save" | "clear" }) {
@@ -109,6 +109,23 @@ function Panel({ api }: { api: typeof OBR }) {
         if (disposed.current) return;
         if (revision === playerRevision) reflectPlayer({ role: playerRole, metadata });
         setHostTheme(currentTheme); setReady(true);
+        // Observe only the content root. MUI menus/tooltips portal into body and
+        // must not enlarge the host embed or create a resize feedback loop.
+        const content = document.querySelector<HTMLElement>("#root")!;
+        let pending: ReturnType<typeof setTimeout> | undefined;
+        let previousHeight = 0;
+        const observer = new ResizeObserver(() => {
+          clearTimeout(pending);
+          pending = setTimeout(() => {
+            if (disposed.current) return;
+            const height = Math.ceil(content.getBoundingClientRect().height);
+            if (height <= 0 || height === previousHeight) return;
+            previousHeight = height;
+            void api.broadcast.sendMessage(PANEL_HEIGHT, height, { destination: "LOCAL" }).catch(console.error);
+          }, 50);
+        });
+        observer.observe(content);
+        cleanups.push(() => { observer.disconnect(); clearTimeout(pending); });
         await api.broadcast.sendMessage(PREF_REQUEST, {}, { destination: "LOCAL" });
         const current = await createPortraitBinding(api);
         if (disposed.current) { current.dispose(); return; }

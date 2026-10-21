@@ -1,4 +1,4 @@
-# Token Portrait 1.6.1
+# Token Portrait 1.6.2
 
 ## Material UI ภายในเมนู Owlbear
 
@@ -6,7 +6,9 @@
 เมนูเลือกเป็น MUI ไม่ใช้ native select ของ Windows/เบราว์เซอร์ จึงมีธีมและการใช้คีย์บอร์ดสอดคล้องกัน
 รับ palette ผ่าน `OBR.theme.getTheme()` และ `onChange` เพื่อเปลี่ยนสีตามห้องมืด/สว่าง ใช้ขอบมน 12px ตามแนวทาง Owl Trackers
 ยังฝังในเมนูสามจุด → Portrait ด้วย Context Menu API ของ Owlbear ไม่มี Tool หรือแผงแยก
-แผงสูง 340px ทดสอบความกว้าง 240/280/320px; พื้นหลัง iframe โปร่งใส ฟอนต์ Roboto รวมใน build
+ความสูงแผงปรับตามเนื้อหาจริงด้วย ResizeObserver ไม่เว้นช่องว่าง 340px คงที่
+ทดสอบความกว้าง 240/280/320px; พื้นหลัง iframe โปร่งใส ฟอนต์ Roboto รวมใน build
+ข้อความสถานะยาวทำให้แผงขยายและหดกลับได้ การเปิดเมนู MUI หรือ Tooltip ไม่ทำให้ความสูงเปลี่ยน
 คอนโทรลภายในมาจากไลบรารี MUI ที่ Extension อื่นใช้ ไม่ใช่คอนโทรลที่ SDK ของ Owlbear สร้างให้โดยตรง
 
 แหล่งอ้างอิงแนวทาง:
@@ -38,16 +40,16 @@ SDK ไม่มี API ที่สร้างช่องตั้งค่�
 
 ## แก้แผงว่างจากการอัปโหลดไฟล์ทับ
 
-รุ่น 1.6.1 มี `src/panel.ts` เป็นตัวส่งต่อไปยัง `src/panel.tsx` แบบระบุนามสกุลชัดเจน
+รุ่น 1.6.2 มี `src/panel.ts` เป็นตัวส่งต่อไปยัง `src/panel.tsx` แบบระบุนามสกุลชัดเจน
 เพื่อทับไฟล์ panel.ts เก่าที่ GitHub web upload ไม่ลบทิ้งให้ และป้องกันตัว resolver เลือกโค้ด DOM รุ่นเก่า
 อัปโหลดไฟล์ทั้งชุดตามปกติ ไม่ต้องลบไฟล์เก่าด้วยตนเอง
 
 ## อัปเดต GitHub / Cloudflare
 
-1. แตก `token-portrait-source-1.6.1.zip`
+1. แตก `token-portrait-source-1.6.2.zip`
 2. อัปโหลดไฟล์และโฟลเดอร์ภายในทับที่ root ของ repository เดิม แล้ว Commit
 3. Cloudflare Pages ใช้ build command `npm run build`, output `dist`, root เว้นว่าง
-4. รอ deploy สำเร็จ ตรวจ manifest URL เดิมให้แสดง version `1.6.1`
+4. รอ deploy สำเร็จ ตรวจ manifest URL เดิมให้แสดง version `1.6.2`
 5. โหลดห้อง Owlbear ใหม่ เพื่อยกเลิก background รุ่นเก่าและรับเมนูใหม่
 
 มีการล้าง toolbar registration จากรุ่น 1.2 ระหว่างเริ่มทำงาน
