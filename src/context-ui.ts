@@ -11,7 +11,8 @@ export async function createContextUI(api: typeof OBR) {
   await api.contextMenu.create({
     id: `${ID}/open`,
     icons: [{ icon: "/icon.svg", label: "Portrait", filter: { some: [{ key: "type", value: "IMAGE" }] } }],
-    embed: { url: "/panel.html", height: 360 },
+    embed: { url: "/panel.html", height: 280 },
   });
   return { remove: () => api.contextMenu.remove(`${ID}/open`) };
 }
+

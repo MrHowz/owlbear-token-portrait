@@ -12,7 +12,7 @@ bus.onmessage=event=>emit(`broadcast:${event.data.channel}`,{data:event.data.dat
 const persist=()=>{localStorage.setItem("qa-items",JSON.stringify(items));localStorage.setItem("qa-selection",JSON.stringify(selection));};persist();
 const api:any={
  tool:{remove:async()=>{},removeMode:async()=>{},removeAction:async()=>{},create:async()=>{throw Error("No sidebar tool allowed");}},
- contextMenu:{create:async(menu:any)=>{const button=document.createElement("button");button.textContent=menu.icons[0].label;button.id="context-portrait";button.onclick=()=>{document.querySelector("#editor")?.remove();const frame=document.createElement("iframe");frame.id="editor";frame.title="Portrait submenu";frame.src="/qa/panel.html";Object.assign(frame.style,{position:"absolute",top:"170px",left:"12px",width:"320px",height:`${menu.embed.height}px`,zIndex:"5",border:"0",borderRadius:"8px"});document.body.append(frame);};document.querySelector("#menus")!.append(button);},remove:async()=>{}},
+ contextMenu:{create:async(menu:any)=>{const button=document.createElement("button");button.textContent=menu.icons[0].label;button.id="context-portrait";button.onclick=()=>{document.querySelector("#editor")?.remove();const frame=document.createElement("iframe");frame.id="editor";frame.title="Portrait submenu";frame.src="/qa/panel.html";Object.assign(frame.style,{position:"absolute",top:"170px",left:"12px",width:"320px",height:`${menu.embed.height}px`,zIndex:"5",border:"0",borderRadius:"0",background:"#3d4051"});document.body.append(frame);};document.querySelector("#menus")!.append(button);},remove:async()=>{}},
  broadcast:{onMessage:(channel:string,fn:Function)=>subscribe(`broadcast:${channel}`)(fn),sendMessage:async(channel:string,data:any)=>bus.postMessage({channel,data})},
  notification:{show:async(text:string)=>{document.querySelector("#status")!.textContent=text;}},
  player:{getSelection:async()=>selection,getRole:async()=>"PLAYER",onChange:subscribe("player")},
@@ -28,3 +28,4 @@ document.querySelector("#delete")!.addEventListener("click",()=>{items=items.fil
 document.querySelector("#scene")!.addEventListener("click",()=>{ready=!ready;emit("ready",ready);bus.postMessage({channel:"qa/scene",data:ready});});
 document.querySelector("#pan")!.addEventListener("click",()=>{pan=!pan;document.querySelector<HTMLElement>("#board")!.style.backgroundPosition=pan?"123px 78px":"0 0";for(const el of document.querySelectorAll<HTMLElement>(".token"))el.style.transform=pan?"translate(100px,50px) scale(1.2)":"none";});
 window.addEventListener("storage",event=>{if(event.key==="qa-items"&&event.newValue){items=JSON.parse(event.newValue);emit("items",items);}});
+

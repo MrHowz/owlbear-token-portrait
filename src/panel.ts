@@ -19,7 +19,7 @@ export function startPanel(api: typeof OBR) {
     settings = settingsFrom(value); side.value = settings.side; size.value = String(settings.size); enabled.checked = settings.enabled;
   }
   function theme(value: Theme) {
-    document.documentElement.style.colorScheme = value.mode === "LIGHT" ? "light" : "dark";
+    document.documentElement.dataset.theme = value.mode.toLowerCase();
     for (const [key, val] of Object.entries({text:value.text.primary,paper:value.background.paper,muted:value.text.secondary,primary:value.primary.main,line:value.text.disabled})) document.body.style.setProperty(`--${key}`,val);
   }
   async function updateSettings(value: Settings) {
@@ -77,3 +77,4 @@ export function startPanel(api: typeof OBR) {
   });
   window.addEventListener("pagehide",()=>{disposed=true;binding?.dispose();cleanups.forEach(fn=>fn());},{once:true});
 }
+

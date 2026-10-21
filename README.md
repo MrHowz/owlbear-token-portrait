@@ -1,4 +1,10 @@
-# Token Portrait 1.3.0
+# Token Portrait 1.3.1
+
+## หน้าตาแบบ Edit Stats
+
+ปรับพื้นหลังแผงให้โปร่งใส กลมกลืนกับเมนูของ Owlbear ใช้ Roboto ช่องขอบมนและปุ่มแถวสีอ่อนตามแนวทางของ Edit Stats
+แผงสูง 280px ใช้โทนมืด/สว่างตาม Theme API และคงทุกคำสั่งไว้ในเมนูสามจุด
+Roboto รวมในไฟล์ build โดยไม่โหลดจาก Google Fonts ระหว่างใช้งาน ใบอนุญาตอยู่ใน public/licenses/roboto.txt
 
 ## ใช้จากเมนูสามจุดของ Token
 
@@ -21,10 +27,10 @@ SDK ไม่มี API ที่สร้างช่องตั้งค่�
 
 ## อัปเดต GitHub / Cloudflare
 
-1. แตก `token-portrait-source-1.3.0.zip`
+1. แตก `token-portrait-source-1.3.1.zip`
 2. อัปโหลดไฟล์และโฟลเดอร์ภายในทับที่ root ของ repository เดิม แล้ว Commit
 3. Cloudflare Pages ใช้ build command `npm run build`, output `dist`, root เว้นว่าง
-4. รอ deploy สำเร็จ ตรวจ manifest URL เดิมให้แสดง version `1.3.0`
+4. รอ deploy สำเร็จ ตรวจ manifest URL เดิมให้แสดง version `1.3.1`
 5. โหลดห้อง Owlbear ใหม่ เพื่อยกเลิก background รุ่นเก่าและรับเมนูใหม่
 
 มีการล้าง toolbar registration จากรุ่น 1.2 ระหว่างเริ่มทำงาน
@@ -58,9 +64,10 @@ npm run dev -- --port 5190
 ```
 
 `/qa/index.html` เป็น SDK adapter สำหรับตรวจ panel จริงและ controller
-`/qa/panel-fit.html` ตรวจแผงกว้าง 320/280 px ในธีมมืด/สว่าง
+`/qa/panel-fit.html` ตรวจแผงกว้าง 320/240/280 px ในธีมมืด/สว่าง
 หน้าทดสอบไม่รวมใน production build
 ผลทดสอบอยู่ใน QA.md: unit tests, TypeScript/Vite และ browser adapter
 ตำแหน่งของเมนูและ lifecycle ของ image picker ภายใน Owlbear จริงยังต้องตรวจในห้องจริง
 
 API: https://docs.owlbear.rodeo/extensions/apis/context-menu/
+
