@@ -1,4 +1,4 @@
-# Token Portrait 1.6.0
+# Token Portrait 1.6.1
 
 ## Material UI ภายในเมนู Owlbear
 
@@ -36,12 +36,18 @@
 SDK ไม่มี API ที่สร้างช่องตั้งค่าภายใน submenu ให้ทั้งหมดโดยตรง จึงต้องใช้ embedded controls
 ไม่มีหน้าต่างตั้งค่าแยก และการเปิดเมนูไม่เปลี่ยนเครื่องมือที่กำลังใช้งาน
 
+## แก้แผงว่างจากการอัปโหลดไฟล์ทับ
+
+รุ่น 1.6.1 มี `src/panel.ts` เป็นตัวส่งต่อไปยัง `src/panel.tsx` แบบระบุนามสกุลชัดเจน
+เพื่อทับไฟล์ panel.ts เก่าที่ GitHub web upload ไม่ลบทิ้งให้ และป้องกันตัว resolver เลือกโค้ด DOM รุ่นเก่า
+อัปโหลดไฟล์ทั้งชุดตามปกติ ไม่ต้องลบไฟล์เก่าด้วยตนเอง
+
 ## อัปเดต GitHub / Cloudflare
 
-1. แตก `token-portrait-source-1.6.0.zip`
+1. แตก `token-portrait-source-1.6.1.zip`
 2. อัปโหลดไฟล์และโฟลเดอร์ภายในทับที่ root ของ repository เดิม แล้ว Commit
 3. Cloudflare Pages ใช้ build command `npm run build`, output `dist`, root เว้นว่าง
-4. รอ deploy สำเร็จ ตรวจ manifest URL เดิมให้แสดง version `1.6.0`
+4. รอ deploy สำเร็จ ตรวจ manifest URL เดิมให้แสดง version `1.6.1`
 5. โหลดห้อง Owlbear ใหม่ เพื่อยกเลิก background รุ่นเก่าและรับเมนูใหม่
 
 มีการล้าง toolbar registration จากรุ่น 1.2 ระหว่างเริ่มทำงาน

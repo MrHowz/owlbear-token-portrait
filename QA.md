@@ -1,3 +1,11 @@
+# QA 1.6.1 inventory
+
+- Live deployed /panel confirmed blank with TypeError null.addEventListener in old panel-C-jx5WTw.js, while HTML contained the new root div.
+- Cause: GitHub web upload retains old src/panel.ts; extensionless imports prefer .ts over new .tsx.
+- Restore src/panel.ts compatibility entry explicitly re-exporting ./panel.tsx so uploads overwrite old implementation.
+- Verify production bundle renders MUI panel and contains no legacy querySelector/addEventListener controller.
+- Existing regression tests and manifest validation/build.
+
 # QA 1.6.0 inventory
 
 - Replace handwritten controls with real MUI Select/MenuItem, TextField, Slider, Switch, Button, IconButton and Tooltip inside the same context embed.
@@ -101,3 +109,10 @@
 - Evidence: `qa/evidence-1.6.0/mui-dropdown.png`, `mui-themes.png`.
 - Fixed initial palette fallback before Theme API resolves; final browser run has no component render errors.
 - SDK/host embedding and live multi-user behavior remain to verify after deployment. Existing SDK uuid audit advisory is unchanged; new UI packages introduced no additional audit advisories.
+
+## 1.6.1 results
+
+- Local production preview of rebuilt /panel.html renders MUI Select, size input, slider, visibility switch, library/link/clear controls. No console errors. Controls correctly disabled outside an Owlbear SDK host.
+- 20 regression tests passed, manifest 1.6.1 valid and TypeScript/Vite build successful.
+- Source archive includes both src/panel.ts compatibility shim and src/panel.tsx implementation for overwrite-only GitHub upload.
+- Evidence: qa/evidence-1.6.1/production-panel.png. Deployed site was inspected read-only and has not been updated by this task.
