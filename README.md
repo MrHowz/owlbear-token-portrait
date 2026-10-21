@@ -1,64 +1,52 @@
-# Token Portrait 1.2.0
+# Token Portrait 1.3.0
 
-## เปลี่ยนจาก 1.0.0
+## ใช้จากเมนูสามจุดของ Token
 
-- เปลี่ยนจาก Billboard ในฉากที่คอยชดเชยกล้อง เป็น Popover โปร่งใสที่ยึดพิกัดหน้าจอ
-- ไม่อ่านตำแหน่งกล้อง ไม่ชดเชยการ pan/zoom และไม่เปิดภาพซ้ำระหว่างเลื่อนแผนที่
-- แสดงเฉพาะรูป Portrait ที่ผูกไว้กับ Token ไม่ใช้รูป Token เป็นภาพสำรอง
-- เลือกรูปจากคลัง Owlbear ด้วย image picker มาตรฐาน หรือใส่ลิงก์ HTTPS
-- รูปผูกกับ metadata ของ Token ในฉาก จึงยังอยู่หลังโหลดห้องใหม่ และผู้เล่นที่เลือก Token เดียวกันใช้รูปที่กำหนดไว้ได้
-- การเลือก Token และตำแหน่ง/ขนาดภาพยังเป็นของผู้ใช้แต่ละคน
+เลือก Token → เปิดเมนูสามจุด → **Portrait ›**
 
-## อัปเดต GitHub และ Cloudflare Pages
+คำสั่งทั้งหมดอยู่ในแผงย่อยเดียวภายใน context menu ของ Owlbear:
 
-1. แตก `token-portrait-source-1.2.0.zip`
-2. อัปโหลดไฟล์และโฟลเดอร์ภายในไปทับที่ root ของ repository เดิม แล้ว Commit
-3. ตรวจว่ามี `portrait.html`, `link.html`, `background.html` และ `package.json` ที่หน้าแรก
-4. Cloudflare Pages ใช้ Build command `npm run build`, Output `dist`, Root เว้นว่าง
-5. รอ deployment สำเร็จ เปิด manifest URL เดิม ต้องเห็น version `1.2.0`
-6. โหลดห้อง Owlbear ใหม่ หากข้อมูล Extension ยังเก่า ให้ถอดแล้วเพิ่มด้วย manifest URL เดิม
+- ตำแหน่ง ซ้ายล่าง / ขวาล่าง
+- ขนาด เล็ก / กลาง / ใหญ่
+- แสดง / ซ่อนภาพ
+- เลือกรูปจากคลัง Owlbear ด้วย image picker มาตรฐาน
+- ใส่ลิงก์รูปภาพ HTTPS แล้วบันทึก
+- ล้างรูปที่ผูกไว้
 
-URL เดิม: https://owlbear-token-portrait.pages.dev/manifest.json
+รุ่นนี้ไม่ลงทะเบียน Tool, Mode หรือ Action ในแถบเครื่องมือด้านข้าง
+เมนู Portrait ใช้ `OBR.contextMenu` พร้อม `embed` ซึ่งทำให้ Owlbear แสดงเป็นเมนูย่อยแบบลูกศร
+กรอบและการเปิด/ปิดเมนูจัดการโดย Owlbear ส่วนช่องควบคุมภายในเป็นฟอร์มเรียบๆ ใช้สีตาม Theme API
+SDK ไม่มี API ที่สร้างช่องตั้งค่าภายใน submenu ให้ทั้งหมดโดยตรง จึงต้องใช้ embedded controls
+ไม่มีหน้าต่างตั้งค่าแยก และการเปิดเมนูไม่เปลี่ยนเครื่องมือที่กำลังใช้งาน
 
-โฟลเดอร์นี้ยังไม่ได้ push/deploy ขึ้นบัญชี GitHub หรือ Cloudflare ของคุณ
-ไฟล์ deploy ZIP เป็นอีกทางเลือกสำหรับโฮสต์ไฟล์ที่ build แล้ว ส่วน Git integration ให้ใช้ source ZIP
+## อัปเดต GitHub / Cloudflare
 
-## ## วิธีใช้
+1. แตก `token-portrait-source-1.3.0.zip`
+2. อัปโหลดไฟล์และโฟลเดอร์ภายในทับที่ root ของ repository เดิม แล้ว Commit
+3. Cloudflare Pages ใช้ build command `npm run build`, output `dist`, root เว้นว่าง
+4. รอ deploy สำเร็จ ตรวจ manifest URL เดิมให้แสดง version `1.3.0`
+5. โหลดห้อง Owlbear ใหม่ เพื่อยกเลิก background รุ่นเก่าและรับเมนูใหม่
 
-1. เลือก Token แล้วกด **Portrait** ปุ่มเดียวบน context menu ของ Token
-2. Owlbear จะเปิดเครื่องมือ **Portrait** ในแถบเครื่องมือมาตรฐาน
-3. คำสั่งทั้งหมดอยู่ในกลุ่มเดียวกัน:
+มีการล้าง toolbar registration จากรุ่น 1.2 ระหว่างเริ่มทำงาน
+ถ้าไอคอนเก่ายังค้าง ให้รีโหลดห้องหลัง Cloudflare deploy เสร็จ
+รุ่นนี้เพิ่มไฟล์ `panel.html` ซึ่งต้องอยู่ในไฟล์ที่ deploy ด้วย
+source ZIP ใช้กับ Git integration; deploy ZIP ใช้กับการโฮสต์ไฟล์ที่ build แล้ว
+ยังไม่มีการอัปโหลดหรือ deploy ไปยังบัญชีของคุณจากโฟลเดอร์นี้
 
-- **ตำแหน่ง** กดสลับซ้าย/ขวา tooltip แจ้งตำแหน่งปัจจุบัน
-- **แสดง/ซ่อน** กดสลับสถานะ tooltip แจ้งสถานะปัจจุบัน
-- **ขนาด** วน 180 / 240 / 300 px พร้อมขนาดปัจจุบันใน tooltip
-- **เลือกรูปจากคลัง Owlbear** ใช้ image picker มาตรฐาน
-- **ใส่ลิงก์รูปภาพ** เปิดช่องลิงก์เดิมที่มีอยู่ ป้อน HTTPS แล้วบันทึก
-- **ล้างรูปที่ผูกไว้** ลบเฉพาะการผูก Portrait
+## รูปและการตั้งค่า
 
-เปิดจากไอคอน Portrait ใน toolbar ได้เช่นกัน คำสั่งทั้งหกแสดงเฉพาะเมื่อใช้เครื่องมือ Portrait
-ถ้าไม่ได้เลือก Token รูปภาพ ปุ่มเลือกภาพ/ลิงก์/ล้างรูปจะถูกปิดไว้
-เครื่องมือใช้ select mode ของ Owlbear และตั้งให้ใช้พฤติกรรมลากแบบ Move มาตรฐาน
-รุ่นนี้ไม่มีหน้าตั้งค่าใหม่ ปุ่ม/tooltip/tool menu ถูกวาดโดย Owlbear SDK Tool API
-ส่วนช่อง URL เดิมเป็น HTML ของ Extension ที่ใช้สีตามธีม Owlbear เพราะ SDK ไม่มีช่องป้อน URL สำเร็จรูป
+รูป Portrait ผูกกับ metadata ของ Token เดิม รูปและตำแหน่ง Token ไม่ถูกแก้
+Token ที่ยังไม่ผูกรูปจะไม่แสดง Portrait เลือกหลาย Token แล้วผูกภาพจะใช้ภาพเดียวกันทั้งหมด
+ใช้ PNG/WebP โปร่งใสถ้าต้องการไร้พื้นหลัง ระบบไม่ลบกรอบ/พื้นหลังภายในไฟล์ภาพ
+URL ต้องเป็น HTTPS ของรูปโดยตรงที่เปิดดูได้โดยไม่เข้าสู่ระบบ
+ต้องมีสิทธิ์แก้ไข Token จึงผูกหรือล้างรูปได้
 
-ต้องมีสิทธิ์แก้ไข Token เพื่อผูก/ล้างรูป เลือกหลาย Token แล้วกำหนดภาพจะผูกภาพเดียวกันกับทั้งหมด
-ภาพเดิมใน Token และการผูก Portrait จากรุ่นก่อนยังใช้ต่อได้ การแสดงผล/ตำแหน่ง/ขนาดเป็นของแต่ละผู้ใช้
-ใช้ PNG/WebP โปร่งใสเมื่อต้องการตัวละครไร้พื้นหลัง และใช้ลิงก์รูปโดยตรงแบบ HTTPS
+การแสดง/ตำแหน่ง/ขนาดบันทึกเฉพาะผู้ใช้ในเบราว์เซอร์ การเลือก Token ไม่บังคับภาพของคนอื่น
+เมื่อเปิดแผงจะจำ Token ที่เลือกไว้ ถ้าเปลี่ยน Token หรือฉากระหว่างเลือกภาพ จะไม่บันทึกไปยัง Token ใหม่
+รูปเป็น Popover ที่ยึดพิกัดหน้าจอ จึงไม่มีการชดเชยกล้องเมื่อ pan/zoom
+พื้นที่ iframe ของ Portrait อาจรับคลิกแทนแผนที่ด้านหลัง และยังต้องรับ selection จากเครื่องมือของ Owlbear
 
-ข้อจำกัดและผลทดสอบ
-
-- Popover ยึดตำแหน่งหน้าจอ แต่ iframe อาจรับการคลิกในพื้นที่สี่เหลี่ยมของภาพ จึงไม่รับประกัน click-through เหมือนรุ่น Billboard
-- เว้นแถบเครื่องมือด้านข้างและด้านล่างตามขนาดหน้าจอ ไม่อ้างว่าเลี่ยงได้ทุกแผงที่ขยายหรือ Extension อื่น
-- การ resize หน้าต่างตรวจทุก 350 ms; pan/zoom ไม่ทำให้ตำแหน่งภาพเปลี่ยน
-- รับ selection ของ Owlbear จึงยังขึ้นกับเครื่องมือ Move/Measure ว่าส่ง selection หรือไม่
-- การผูกภาพเป็น metadata ของฉาก; URL ภาพไม่ควรเป็นลิงก์ลับที่ไม่ต้องการให้ผู้ร่วมฉากเข้าถึง
-- ไม่มีการเพิ่ม animation หรือขยับปาก
-- ทดสอบ unit tests 10 รายการ, build TypeScript และ browser QA ผ่าน SDK adapter
-- ทดสอบ URL editor และ renderer จริงด้วยลิงก์ HTTPS สำเร็จ และตรวจ HTTP/ลิงก์เสีย
-- ยังไม่ได้ทดสอบ Popover/picker ภายในห้อง Owlbear ที่ลงชื่อเข้าใช้จริง
-
-## พัฒนา
+## ทดสอบ
 
 Node.js 22.18+:
 
@@ -69,10 +57,10 @@ npm run build
 npm run dev -- --port 5190
 ```
 
-เปิด `/qa/index.html` สำหรับ SDK test harness, `/qa/compact.html` สำหรับกรอบหน้าจอเล็ก
-หน้าทดสอบไม่รวมใน dist ที่ deploy
+`/qa/index.html` เป็น SDK adapter สำหรับตรวจ panel จริงและ controller
+`/qa/panel-fit.html` ตรวจแผงกว้าง 320/280 px ในธีมมืด/สว่าง
+หน้าทดสอบไม่รวมใน production build
+ผลทดสอบอยู่ใน QA.md: unit tests, TypeScript/Vite และ browser adapter
+ตำแหน่งของเมนูและ lifecycle ของ image picker ภายใน Owlbear จริงยังต้องตรวจในห้องจริง
 
-API: https://docs.owlbear.rodeo/extensions/apis/popover/
-Image picker: https://docs.owlbear.rodeo/extensions/apis/assets/
-
-
+API: https://docs.owlbear.rodeo/extensions/apis/context-menu/

@@ -2,7 +2,7 @@ import type OBR from "@owlbear-rodeo/sdk";
 import type { Item } from "@owlbear-rodeo/sdk";
 import { chooseImage, defaults, ID, layout, settingsFrom, PORTRAIT_KEY, portraitFrom, type Settings } from "./model.ts";
 
-import { createNativeUI } from "./native-ui.ts";
+import { createContextUI, PREF_COMMAND, PREF_REQUEST, PREF_STATE } from "./context-ui.ts";
 
 export function createController(api: typeof OBR, storage: Pick<Storage, "getItem" | "setItem">) {
   let settings = { ...defaults };
@@ -15,7 +15,7 @@ export function createController(api: typeof OBR, storage: Pick<Storage, "getIte
   let timer: ReturnType<typeof setTimeout> | undefined;
   const unsubscribe: (() => void)[] = [];
   const menuIds = ["left", "right", "hide", "size", "choose", "link", "clear"];
-  let nativeUI: Awaited<ReturnType<typeof createNativeUI>> | undefined;
+  let contextUI: Awaited<ReturnType<typeof createContextUI>> | undefined;
   const popoverId = `${ID}/screen`;
   const report = (error: unknown) => {
     console.error("Token Portrait:", error);
@@ -26,7 +26,7 @@ export function createController(api: typeof OBR, storage: Pick<Storage, "getIte
     open = false; signature = "";
   };
   async function draw() {
-    await nativeUI?.sync(settings, ready && items.some(item => item.type === "IMAGE" && selection.includes(item.id)));
+
     if (disposed || !ready) { await close(); return; }
     const revision = epoch;
     const target = chooseImage(items, selection, previous);
@@ -77,40 +77,16 @@ export function createController(api: typeof OBR, storage: Pick<Storage, "getIte
     await api.popover.close(popoverId);
     // Remove the scattered v1.1 entries when reloading an existing extension.
     for (const key of menuIds) await api.contextMenu.remove(`${ID}/${key}`);
-    nativeUI = await createNativeUI(api, settings, async (action, elementId) => {
-      if (action === "side") { await change({ side: settings.side === "left" ? "right" : "left" }); return; }
-      if (action === "visibility") { await change({ enabled: !settings.enabled }); return; }
-      if (action === "size") {
-        const sizes = [180, 240, 300];
-        const size = sizes[(sizes.indexOf(settings.size) + 1) % sizes.length];
-        await change({ size });
-        return;
-      }
-      if (!ready || disposed) return;
-      const revision = epoch;
-      const selected = await api.player.getSelection() ?? [];
-      if (!selected.length) { await api.notification.show("เลือก Token ก่อนใช้คำสั่งนี้", "INFO"); return; }
-      const selectedItems = await api.scene.items.getItems(selected);
-      if (revision !== epoch || !ready || disposed) return;
-      const ids = selectedItems.filter(item => item.type === "IMAGE").map(item => item.id);
-      if (!ids.length) { await api.notification.show("เลือก Token ก่อนใช้คำสั่งนี้", "INFO"); return; }
-      if (action === "link") {
-        // Reuse the existing URL input; do not introduce a new settings panel.
-        await api.popover.open({ id: `${ID}/editor`, url: "/link.html", width: 340, height: 190, anchorElementId: elementId });
-        return;
-      }
-      if (action === "clear") {
-        await api.scene.items.updateItems(ids, drafts => { for (const item of drafts) delete item.metadata[PORTRAIT_KEY]; });
-        return;
-      }
-      const [asset] = await api.assets.downloadImages(false);
-      if (!asset || revision !== epoch || !ready || disposed) return;
-      const portrait = portraitFrom(asset.image);
-      if (!portrait) throw new Error("Invalid portrait image");
-      await api.scene.items.updateItems(ids, drafts => { for (const item of drafts) item.metadata[PORTRAIT_KEY] = portrait; });
-      await change({ enabled: true });
-    }, report);
+        contextUI = await createContextUI(api);
+    const publishSettings = () => api.broadcast.sendMessage(PREF_STATE, settings, { destination: "LOCAL" });
     unsubscribe.push(
+      api.broadcast.onMessage(PREF_REQUEST, () => { void publishSettings().catch(report); }),
+      api.broadcast.onMessage(PREF_COMMAND, event => {
+        if (!event.data || typeof event.data !== "object") return;
+        void change(settingsFrom(event.data)).then(publishSettings).catch(report);
+      }),
+    );
+unsubscribe.push(
       api.player.onChange(player => { selection = player.selection ?? []; role = player.role; void render(); }),
       api.scene.items.onChange(value => { items = value; void render(); }),
       api.scene.onReadyChange(value => { void setReady(value).catch(report); }),
@@ -127,9 +103,10 @@ export function createController(api: typeof OBR, storage: Pick<Storage, "getIte
     unsubscribe.forEach(fn => fn());
     await render();
     await api.popover.close(`${ID}/editor`);
-    await nativeUI?.remove();
+    await contextUI?.remove();
   }
   return { start, stop, render, getSettings: () => ({ ...settings }) };
 }
+
 
 

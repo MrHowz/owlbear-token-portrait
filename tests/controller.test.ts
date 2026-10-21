@@ -2,6 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createController } from "../src/controller.ts";
 import { ID, PORTRAIT_KEY, portraitFrom } from "../src/model.ts";
+import { createPortraitBinding } from "../src/binding.ts";
+import { PREF_COMMAND, PREF_REQUEST, PREF_STATE } from "../src/context-ui.ts";
 function setup() {
   const handlers: Record<string, Function> = {}, menus: Record<string, any> = {}, actions: Record<string, any> = {}, modes: Record<string, any> = {}, tools: Record<string, any> = {}; let toolMetadata: any = {}, activeTool = "move";
   let shown: any, opens = 0, deleted = 0, selection = ["a"], persisted = "";
@@ -20,6 +22,7 @@ function setup() {
       removeMode: async (id: string) => { delete modes[id]; },
       remove: async (id: string) => { delete tools[id]; },
     },
+    broadcast: { onMessage: (channel: string, fn: Function) => subscribe(`broadcast:${channel}`)(fn), sendMessage: async (channel: string, data: unknown) => { handlers[`sent:${channel}`]?.(data); } },
     notification: { show: async () => {} },
     assets: { downloadImages: async () => [{ image: { url: "https://example.com/library.png", width: 400, height: 700 } }] },
     popover: { open: async (value: any) => { shown = value; opens++; }, close: async () => { shown = undefined; } },
@@ -27,7 +30,7 @@ function setup() {
     viewport: { getWidth: async () => 1400, getHeight: async () => 900, inverseTransformPoint: () => { throw Error("MUST NOT READ CAMERA"); }, getScale: () => { throw Error("MUST NOT READ CAMERA"); } },
     scene: {
       isReady: async () => true, onReadyChange: subscribe("ready"),
-      items: { getItems: async () => items, onChange: subscribe("items"), updateItems: async (ids: string[], fn: Function) => { fn(items.filter(i => ids.includes(i.id))); handlers.items?.(items); } },
+      items: { getItems: async (ids?: string[]) => ids ? items.filter(item => ids.includes(item.id)) : items, onChange: subscribe("items"), updateItems: async (ids: string[], fn: Function) => { fn(items.filter(i => ids.includes(i.id))); handlers.items?.(items); } },
       local: { deleteItems: async () => { deleted++; } },
     },
   };
@@ -69,30 +72,30 @@ test("native library selection saves only portrait metadata, clear removes it", 
   try {
     await s.controller.start();
     const before = JSON.stringify(s.items[0].image);
-    s.actions[`${ID}/choose`].onClick({}, "choose-button"); await settle(); await s.controller.render();
+    const binding = await createPortraitBinding(s.api); await binding.choose(); await s.controller.render();
     assert.equal(s.items[0].metadata[PORTRAIT_KEY].url,"https://example.com/library.png");
     assert.equal(JSON.stringify(s.items[0].image),before);
-    s.actions[`${ID}/clear`].onClick({}, "clear-button"); await settle(); await s.controller.render();
+    await binding.save(null); await s.controller.render(); binding.dispose();
     assert.equal(s.shown(),undefined);
   } finally { await s.controller.stop(); }
 });
 test("cancelled picker and scene change while picker is open never write a mapping", async () => {
   const s = setup();
+  await s.controller.start();
+  const binding = await createPortraitBinding(s.api);
   try {
-    await s.controller.start();
     s.api.assets.downloadImages = async () => [];
-    s.actions[`${ID}/choose`].onClick({}, "choose-button"); await settle();
+    assert.equal(await binding.choose(), false);
     assert.deepEqual(s.items[0].metadata[PORTRAIT_KEY],s.portrait);
     let release!: Function;
-    s.api.assets.downloadImages = () => new Promise(resolve => {release=resolve;});
-    s.actions[`${ID}/choose`].onClick({}, "choose-button");
+    s.api.assets.downloadImages = () => new Promise(resolve => { release=resolve; });
+    const pending = binding.choose();
     await settle();
     s.handlers.ready(false);
     release([{image:{url:"https://example.com/wrong.png",width:2,height:2}}]);
-    await settle();
+    await assert.rejects(pending,/ฉากเปลี่ยน/);
     assert.deepEqual(s.items[0].metadata[PORTRAIT_KEY],s.portrait);
-    assert.equal(s.shown(),undefined);
-  } finally { await s.controller.stop(); }
+  } finally { binding.dispose(); await s.controller.stop(); }
 });
 test("reject unsafe links and malformed dimensions", () => {
   for (const url of ["http://example.com/a.png","javascript:alert(1)","data:image/svg+xml,x","https://user:password@example.com/a.png"]) assert.equal(portraitFrom({url,width:200,height:300}),undefined);
@@ -100,40 +103,42 @@ test("reject unsafe links and malformed dimensions", () => {
 });
 
 
-test("one native tool group and one token entry replace the scattered menus", async () => {
-  const s = setup();
+
+test("one embedded context submenu registers no sidebar tools and preserves active tool", async () => {
+  const s=setup();
+  let created=0; s.api.tool.create=async()=>{created++;};
+  s.tools[`${ID}/tool`]={};s.modes[`${ID}/select`]={};s.actions[`${ID}/side`]={};
   try {
     await s.controller.start();
-    assert.deepEqual(Object.keys(s.menus), [`${ID}/open`]);
-    assert.equal(Object.keys(s.tools).length, 1);
-    assert.equal(Object.keys(s.actions).length, 6);
-    assert.equal(Object.keys(s.modes).length, 1);
-    assert.deepEqual(s.modes[`${ID}/select`].preventDrag, {});
-    assert.equal(s.menus[`${ID}/open`].embed, undefined);
-    for (const action of Object.values(s.actions)) {
-      for (const icon of action.icons) assert.deepEqual(icon.filter.activeTools, [`${ID}/tool`]);
+    assert.deepEqual(Object.keys(s.menus),[`${ID}/open`]);
+    assert.deepEqual(s.menus[`${ID}/open`].embed,{url:"/panel.html",height:360});
+    assert.equal(s.menus[`${ID}/open`].onClick,undefined);
+    assert.equal(s.activeTool(),"move");
+    assert.equal(created,0);
+    assert.equal(Object.keys(s.tools).length,0);
+    assert.equal(Object.keys(s.actions).length,0);
+    assert.equal(Object.keys(s.modes).length,0);
+    let state:any;
+    s.handlers[`sent:${PREF_STATE}`]=(value:any)=>{state=value;};
+    s.handlers[`broadcast:${PREF_REQUEST}`]({data:{}});await settle();
+    assert.deepEqual(state,s.controller.getSettings());
+    for(const side of ["left","right"]){
+      s.handlers[`broadcast:${PREF_COMMAND}`]({data:{...state,side}});await settle();
+      assert.equal(s.controller.getSettings().side,side);
     }
-    s.menus[`${ID}/open`].onClick({items:s.items}); await settle();
-    assert.equal(s.activeTool(), `${ID}/tool`);
-    assert.equal(s.metadata().hasToken, true);
-    s.actions[`${ID}/side`].onClick({},"side"); await settle();
-    assert.equal(s.controller.getSettings().side,"left");
-    assert.equal(s.metadata().side,"left");
-    s.actions[`${ID}/side`].onClick({},"side"); await settle();
-    assert.equal(s.controller.getSettings().side,"right");
-    s.actions[`${ID}/visibility`].onClick({},"visibility"); await settle();
-    assert.equal(s.shown(),undefined);
-    s.actions[`${ID}/visibility`].onClick({},"visibility"); await settle();
-    assert.ok(s.shown());
-    for(const size of [180,240,300]){s.actions[`${ID}/size`].onClick({},"size");await settle();assert.equal(s.metadata().size,size);}
-    s.actions[`${ID}/link`].onClick({},"link-button");await settle();
-    assert.equal(s.shown().url,"/link.html");
-    assert.equal(s.shown().anchorElementId,"link-button");
-    s.handlers.player({selection:[],role:"PLAYER"});await s.controller.render();
-    assert.equal(s.metadata().hasToken,false);
-  } finally { await s.controller.stop(); }
+    s.handlers[`broadcast:${PREF_COMMAND}`]({data:{...state,enabled:false}});await settle();assert.equal(s.shown(),undefined);
+    s.handlers[`broadcast:${PREF_COMMAND}`]({data:{...state,enabled:true,size:180}});await settle();assert.ok(s.shown());assert.equal(s.controller.getSettings().size,180);
+  } finally {await s.controller.stop();}
   assert.equal(Object.keys(s.menus).length,0);
-  assert.equal(Object.keys(s.tools).length,0);
-  assert.equal(Object.keys(s.actions).length,0);
-  assert.equal(Object.keys(s.modes).length,0);
+});
+test("binding prevents writing to a changed or empty selection",async()=>{
+  const s=setup();const binding=await createPortraitBinding(s.api);
+  try {
+    s.api.player.getSelection=async()=>["different-token"];
+    await assert.rejects(binding.save({url:"https://example.com/new.png",width:20,height:40}),/เปลี่ยน/);
+    assert.deepEqual(s.items[0].metadata[PORTRAIT_KEY],s.portrait);
+  } finally {binding.dispose();}
+  s.api.player.getSelection=async()=>[];
+  const empty=await createPortraitBinding(s.api);
+  try {assert.equal(empty.ids.length,0);await assert.rejects(empty.save(null),/เลือก Token/);}finally{empty.dispose();}
 });
