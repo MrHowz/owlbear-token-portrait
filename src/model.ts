@@ -1,6 +1,7 @@
 import type { Image, Item } from "@owlbear-rodeo/sdk";
 
 export const ID = "com.token-portrait";
+export const SHARE_KEY = `${ID}/share-selection`;
 export const PORTRAIT_KEY = `${ID}/image`;
 export type Portrait = { url: string; width: number; height: number };
 export function portraitFrom(value: unknown): Portrait | undefined {
@@ -35,14 +36,14 @@ export function chooseImage(items: Item[], selection: string[], previous?: strin
   return candidates.find(item => item.id === previous) ?? candidates.at(-1);
 }
 
-export function layout(width: number, height: number, imageWidth: number, imageHeight: number, settings: Settings) {
+export function layout(width: number, height: number, imageWidth: number, imageHeight: number, settings: Settings, split = false) {
   // Use the space beside the bottom dock on desktop, so the portrait can sit
   // at the bottom edge without covering it. Narrow screens need to sit above it.
   const sideGap = width < 600 ? 64 : 84;
   const cornerWidth = (width - 480) / 2 - sideGap - 8;
   const fitsBesideDock = cornerWidth >= 160;
   const bottomGap = fitsBesideDock ? 8 : (height < 500 ? 76 : 100);
-  const availableWidth = fitsBesideDock ? cornerWidth : width - sideGap * 2;
+  const availableWidth = fitsBesideDock ? cornerWidth : split ? (width - sideGap * 2 - 16) / 2 : width - sideGap * 2;
   const availableHeight = height - bottomGap - 80;
   if (![width, height, imageWidth, imageHeight].every(Number.isFinite) ||
       availableWidth < 48 || availableHeight < 48 || imageWidth <= 0 || imageHeight <= 0) return undefined;
@@ -55,4 +56,27 @@ export function layout(width: number, height: number, imageWidth: number, imageH
     x: settings.side === "left" ? sideGap : width - sideGap - w,
     y: height - bottomGap - h, width: w, height: h, ratio,
   };
+}
+
+// Use host-supplied role/selection, never a broadcast claiming to be the GM.
+export type Presenter = { id: string; connectionId: string; role: string; selection?: string[]; metadata: Record<string, unknown> };
+export function sharedTarget(items: Item[], players: Presenter[]) {
+  for (const player of [...players].sort((a,b) => a.connectionId.localeCompare(b.connectionId))) {
+    if (player.role !== "GM" || player.metadata?.[SHARE_KEY] !== true) continue;
+    const target = chooseImage(items, player.selection ?? []);
+    if (!target || !portraitFrom(target.metadata[PORTRAIT_KEY])) continue;
+    // Fail closed, including images attached to hidden parents.
+    const seen = new Set<string>();
+    let current: Item | undefined = target;
+    let visible = true;
+    while (current) {
+      if (current.visible !== true || seen.has(current.id)) { visible = false; break; }
+      seen.add(current.id);
+      if (!current.attachedTo) break;
+      const parentId: string = current.attachedTo;
+      current = items.find(item => item.id === parentId);
+      if (!current) visible = false;
+    }
+    if (visible) return target;
+  }
 }

@@ -1,9 +1,25 @@
 import type OBR from "@owlbear-rodeo/sdk";
 import type { Theme } from "@owlbear-rodeo/sdk";
-import { ID, defaults, portraitFrom, settingsFrom, type Settings } from "./model";
+import { ID, SHARE_KEY, defaults, portraitFrom, settingsFrom, type Settings } from "./model";
 import { createPortraitBinding } from "./binding";
 import { PREF_COMMAND, PREF_REQUEST, PREF_STATE } from "./context-ui";
 export function startPanel(api: typeof OBR) {
+  const shareRow = document.querySelector<HTMLElement>("#share-row")!;
+  const share = document.querySelector<HTMLInputElement>("#share")!;
+  let shareRevision = 0;
+  function reflectShare(role: string, metadata: Record<string, unknown>) {
+    shareRow.hidden = role !== "GM"; share.disabled = role !== "GM";
+    share.checked = role === "GM" && metadata[SHARE_KEY] === true;
+  }
+  share.addEventListener("change", async () => {
+    const value = share.checked; share.disabled = true;
+    try {
+      if (await api.player.getRole() !== "GM") throw new Error("โหมดนี้ใช้ได้เฉพาะ DM");
+      await api.player.setMetadata({ [SHARE_KEY]: value });
+      status.textContent = value ? "แชร์ตาม Token ที่ DM เลือก · Token ที่ปิดตาจะไม่แสดง" : "หยุดแสดงให้ทุกคนแล้ว";
+    } catch { status.textContent = "เปลี่ยนโหมดแชร์ไม่สำเร็จ"; }
+    finally { reflectShare(await api.player.getRole(), await api.player.getMetadata()); }
+  });
   const side = document.querySelector<HTMLSelectElement>("#side")!;
   const size = document.querySelector<HTMLInputElement>("#size")!;
   const sizeRange = document.querySelector<HTMLInputElement>("#size-range")!;
@@ -70,6 +86,10 @@ export function startPanel(api: typeof OBR) {
   api.onReady(async()=>{
     try {
       cleanups.push(api.broadcast.onMessage(PREF_STATE,event=>reflect(event.data)));
+      cleanups.push(api.player.onChange(player => { ++shareRevision; reflectShare(player.role, player.metadata); }));
+      const revision = shareRevision;
+      const [role, metadata] = await Promise.all([api.player.getRole(), api.player.getMetadata()]);
+      if (revision === shareRevision) reflectShare(role, metadata);
       cleanups.push(api.theme.onChange(theme));theme(await api.theme.getTheme());
       try {reflect(JSON.parse(localStorage.getItem(ID)??"null"));}catch{reflect(defaults);}
       preferences.disabled=false;

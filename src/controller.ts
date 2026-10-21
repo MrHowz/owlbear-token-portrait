@@ -1,6 +1,6 @@
 import type OBR from "@owlbear-rodeo/sdk";
 import type { Item } from "@owlbear-rodeo/sdk";
-import { chooseImage, defaults, ID, layout, settingsFrom, PORTRAIT_KEY, portraitFrom, type Settings } from "./model.ts";
+import { chooseImage, defaults, ID, layout, settingsFrom, PORTRAIT_KEY, portraitFrom, sharedTarget, type Presenter, type Settings } from "./model.ts";
 
 import { createContextUI, PREF_COMMAND, PREF_REQUEST, PREF_STATE } from "./context-ui.ts";
 
@@ -10,7 +10,10 @@ export function createController(api: typeof OBR, storage: Pick<Storage, "getIte
   let items: Item[] = [], selection: string[] = [];
   let previous: string | undefined;
   let ready = false, disposed = false, epoch = 0, role = "PLAYER";
-  let signature = "", open = false;
+  const displays = new Map<string, string>();
+  let self: Presenter = { id: "", connectionId: "", role: "PLAYER", metadata: {}, selection: [] };
+  let party: Presenter[] = [];
+  let stateRevision = 0;
   let queue = Promise.resolve();
   let timer: ReturnType<typeof setTimeout> | undefined;
   const unsubscribe: (() => void)[] = [];
@@ -21,53 +24,68 @@ export function createController(api: typeof OBR, storage: Pick<Storage, "getIte
     console.error("Token Portrait:", error);
     void api.notification.show("Portrait: ทำรายการไม่สำเร็จ ตรวจสิทธิ์แก้ไข Token และลิงก์ภาพ", "ERROR").catch(console.error);
   };
-  const close = async () => {
-    if (open) await api.popover.close(popoverId);
-    open = false; signature = "";
+  const sharedId = `${ID}/shared-screen`;
+  const closeDisplay = async (id: string) => {
+    if (displays.has(id)) await api.popover.close(id);
+    displays.delete(id);
   };
-  async function draw() {
-
-    if (disposed || !ready) { await close(); return; }
-    const revision = epoch;
-    const target = chooseImage(items, selection, previous);
-    previous = target?.id;
+  const close = async () => { await closeDisplay(popoverId); await closeDisplay(sharedId); };
+  async function display(id: string, target: Item | undefined, value: Settings, revision: number, generation: number, split = false) {
     const portrait = portraitFrom(target?.metadata?.[PORTRAIT_KEY]);
-    if (!target || !portrait || !settings.enabled || (!target.visible && role !== "GM")) { await close(); return; }
+    if (!portrait) { await closeDisplay(id); return; }
     const [width, height] = await Promise.all([api.viewport.getWidth(), api.viewport.getHeight()]);
-    if (revision !== epoch || disposed || !ready) return;
-    const rect = layout(width, height, portrait.width, portrait.height, settings);
-    if (!rect) { await close(); return; }
+    if (revision !== epoch || generation !== stateRevision || disposed || !ready) return;
+    const rect = layout(width, height, portrait.width, portrait.height, value, split);
+    if (!rect) { await closeDisplay(id); return; }
     const next = JSON.stringify([portrait, rect.x, rect.y, rect.width, rect.height]);
-    if (next === signature) return;
+    if (next === displays.get(id)) return;
     // Screen coordinates only. NEVER read or compensate for the camera transform.
     await api.popover.open({
-      id: popoverId, url: `/portrait.html#${encodeURIComponent(JSON.stringify(portrait))}`,
+      id, url: `/portrait.html#${encodeURIComponent(JSON.stringify(portrait))}`,
       width: Math.ceil(rect.width), height: Math.ceil(rect.height),
       anchorReference: "POSITION", anchorPosition: { left: Math.floor(rect.x), top: Math.floor(rect.y) },
       anchorOrigin: { horizontal: "LEFT", vertical: "TOP" },
       transformOrigin: { horizontal: "LEFT", vertical: "TOP" },
       hidePaper: true, disableClickAway: true, marginThreshold: 0,
     });
-    open = true; signature = next;
+    displays.set(id, next);
+    if (revision !== epoch || generation !== stateRevision || disposed || !ready) await closeDisplay(id);
+  }
+  async function draw() {
+    if (disposed || !ready) { await close(); return; }
+    const revision = epoch, generation = stateRevision;
+    const target = chooseImage(items, selection, previous);
+    previous = target?.id;
+    const shared = sharedTarget(items, [self, ...party]);
+    // Close a no-longer-visible shared portrait before any asynchronous open.
+    if (!shared) await closeDisplay(sharedId);
+    await display(popoverId, settings.enabled && (target?.visible || role === "GM") ? target : undefined, settings, revision, generation, !!shared);
+    if (revision !== epoch || generation !== stateRevision || disposed || !ready) return;
+    await display(sharedId, shared, { ...settings, side: settings.side === "left" ? "right" : "left" }, revision, generation, true);
   }
   function render() {
     queue = queue.then(draw).catch(report);
     return queue;
   }
-  async function setReady(value: boolean) {
+  async function setReady(value: boolean): Promise<void> {
     const revision = ++epoch;
     ready = false; items = []; selection = []; previous = undefined;
     await render();
     if (!value || disposed || revision !== epoch) return;
     // Migration: remove the v1 camera-follow billboard, including after reload.
     await api.scene.local.deleteItems([`${ID}/portrait`]);
-    const result = await Promise.all([api.scene.items.getItems(), api.player.getSelection(), api.player.getRole()]);
+    const generation = stateRevision;
+    const result = await Promise.all([api.scene.items.getItems(), api.player.getSelection(), api.player.getRole(), api.player.getMetadata(), api.player.getId(), api.player.getConnectionId(), api.party.getPlayers()]);
     if (revision !== epoch || disposed) return;
+    if (generation !== stateRevision) return setReady(true);
     [items, selection, role] = [result[0], result[1] ?? [], result[2]];
+    self = { id: result[4], connectionId: result[5], role, selection, metadata: result[3] };
+    party = result[6];
     ready = true;
     await render();
   }
   async function change(patch: Partial<Settings>) {
+    ++stateRevision;
     settings = settingsFrom({ ...settings, ...patch });
     try { storage.setItem(ID, JSON.stringify(settings)); } catch {}
     await render();
@@ -75,9 +93,10 @@ export function createController(api: typeof OBR, storage: Pick<Storage, "getIte
   async function start() {
     // A previous background instance may have left a screen popover behind.
     await api.popover.close(popoverId);
+    await api.popover.close(sharedId);
     // Remove the scattered v1.1 entries when reloading an existing extension.
     for (const key of menuIds) await api.contextMenu.remove(`${ID}/${key}`);
-        contextUI = await createContextUI(api);
+    contextUI = await createContextUI(api);
     const publishSettings = () => api.broadcast.sendMessage(PREF_STATE, settings, { destination: "LOCAL" });
     unsubscribe.push(
       api.broadcast.onMessage(PREF_REQUEST, () => { void publishSettings().catch(report); }),
@@ -86,9 +105,10 @@ export function createController(api: typeof OBR, storage: Pick<Storage, "getIte
         void change(settingsFrom(event.data)).then(publishSettings).catch(report);
       }),
     );
-unsubscribe.push(
-      api.player.onChange(player => { selection = player.selection ?? []; role = player.role; void render(); }),
-      api.scene.items.onChange(value => { items = value; void render(); }),
+    unsubscribe.push(
+      api.player.onChange(player => { selection = player.selection ?? []; role = player.role; self = player; ++stateRevision; void render(); }),
+      api.party.onChange(players => { party = players; ++stateRevision; void render(); }),
+      api.scene.items.onChange(value => { items = value; ++stateRevision; void render(); }),
       api.scene.onReadyChange(value => { void setReady(value).catch(report); }),
     );
     const revision = epoch;

@@ -63,3 +63,10 @@ test("selection is stable, ignores non-images and clears on deselection/deletion
   assert.equal(chooseImage(items,[]),undefined);
   assert.equal(chooseImage(items,["deleted"]),undefined);
 });
+
+test("two portraits reserve opposite halves on narrow screens without overlap", () => {
+  const left = layout(390,844,600,600,{side:"left",enabled:true,size:1600},true)!;
+  const right = layout(390,844,600,600,{side:"right",enabled:true,size:1600},true)!;
+  assert.ok(left.x + left.width + 16 <= right.x);
+  assert.equal(left.height,right.height);
+});
