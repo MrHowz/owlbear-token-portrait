@@ -1,8 +1,8 @@
 {
   "name": "Token Portrait",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "manifest_version": 1,
-  "description": "Show your selected token as a borderless, click-through portrait in a lower corner. Configure with native token context menus.",
+  "description": "Fixed screen portraits linked to tokens. Choose artwork from Owlbear's image library or an HTTPS image URL using token context menus.",
   "icon": "/icon.svg",
   "background_url": "/background.html"
 }

@@ -1,87 +1,73 @@
 import { createController } from "../src/controller";
-import { ID } from "../src/model";
-
+import { PORTRAIT_KEY } from "../src/model";
 const callbacks: Record<string, Function> = {};
-const subscribe = (key: string) => (callback: Function) => { callbacks[key] = callback; return () => delete callbacks[key]; };
-let selection: string[] = [];
-let ready = true;
-let zoom = 1;
-let offset = 0;
-let underClicks = 0;
-let items = [
-  { id: "a", type: "IMAGE", visible: true, image: { url: "/qa/amber.svg", width: 240, height: 440, mime: "image/svg+xml" } },
-  { id: "b", type: "IMAGE", visible: true, image: { url: "/qa/blue.svg", width: 300, height: 440, mime: "image/svg+xml" } },
-  { id: "shape", type: "SHAPE", visible: true },
+const subscribe = (key: string) => (fn: Function) => { callbacks[key] = fn; return () => delete callbacks[key]; };
+let selection: string[] = [], ready = true, pan = false, opens = 0;
+const artA = { url: "https://qa.invalid/amber.svg", width:240,height:440 };
+const artB = { url: "https://qa.invalid/blue.svg", width:300,height:440 };
+let items: any[] = [
+  {id:"a",type:"IMAGE",visible:true,metadata:{[PORTRAIT_KEY]:artB},image:artA},
+  {id:"b",type:"IMAGE",visible:true,metadata:{},image:artB},
+  {id:"shape",type:"SHAPE",visible:true,metadata:{}},
 ];
-let local: any;
-const draw = () => {
-  document.querySelector("#portrait")?.remove();
-  if (!local) return;
-  const img = document.createElement("img");
-  img.id = "portrait";
-  img.src = local.image.url;
-  img.alt = "Selected token portrait";
-  Object.assign(img.style, {
-    left: `${local.position.x * zoom + offset}px`, top: `${local.position.y * zoom + offset}px`,
-    width: `${local.image.width * local.scale.x}px`, height: `${local.image.height * local.scale.y}px`,
-  });
-  document.body.append(img);
-};
+const status = (text: string) => {document.querySelector("#status")!.textContent=text;};
 const api: any = {
-  contextMenu: {
-    create: async (menu: any) => {
-      const button = document.createElement("button");
-      button.textContent = menu.id.split("/").at(-1)!;
-      button.onclick = menu.onClick;
+  contextMenu:{
+    create:async(menu:any)=>{
+      const button=document.createElement("button"); button.textContent=menu.id.split("/").at(-1);
+      button.onclick=()=>{
+        if(menu.embed){
+          localStorage.setItem("qa-target",selection[0]??"");
+          const frame=document.createElement("iframe");frame.src="/qa/link.html";frame.id="editor";
+          Object.assign(frame.style,{position:"absolute",top:"190px",left:"12px",width:"340px",height:"210px",zIndex:"5",border:"1px solid #777"});
+          document.querySelector("#editor")?.remove();document.body.append(frame);
+        }else menu.onClick({items:items.filter(i=>selection.includes(i.id))});
+      };
       document.querySelector("#menus")!.append(button);
-    },
-    remove: async () => {},
+    },remove:async()=>{},
   },
-  notification: { show: async (text: string) => { document.querySelector("#status")!.textContent = text; } },
-  player: { getSelection: async () => selection, getRole: async () => "PLAYER", onChange: subscribe("player") },
-  viewport: {
-    getWidth: async () => innerWidth, getHeight: async () => innerHeight,
-    inverseTransformPoint: async (point: any) => ({ x: (point.x - offset) / zoom, y: (point.y - offset) / zoom }),
-  },
-  scene: {
-    isReady: async () => ready, onReadyChange: subscribe("ready"),
-    grid: { getDpi: async () => 150, onChange: subscribe("grid") },
-    items: { getItems: async () => items, onChange: subscribe("items") },
-    local: {
-      deleteItems: async () => { local = undefined; draw(); },
-      addItems: async (value: any[]) => { local = value[0]; draw(); },
-      updateItems: async (_ids: string[], update: Function) => { update([local]); draw(); },
+  assets:{downloadImages:()=>new Promise(resolve=>{
+    const dialog=document.createElement("dialog");dialog.innerHTML='<p>Simulated Owlbear image picker</p><button id="art-a">Amber art</button> <button id="art-b">Blue art</button> <button id="cancel">Cancel</button>';
+    document.body.append(dialog);dialog.showModal();
+    for(const [id,value] of [["art-a",artA],["art-b",artB],["cancel",null]] as const)dialog.querySelector(`#${id}`)!.addEventListener("click",()=>{dialog.close();dialog.remove();resolve(value?[{image:value}]:[]);});
+  })},
+  notification:{show:async(text:string)=>status(text)},
+  player:{getSelection:async()=>selection,getRole:async()=>"PLAYER",onChange:subscribe("player")},
+  viewport:{getWidth:async()=>innerWidth,getHeight:async()=>innerHeight,inverseTransformPoint:()=>{throw Error("Camera access forbidden");}},
+  popover:{
+    close:async()=>{document.querySelector("#portrait-frame")?.remove();},
+    open:async(value:any)=>{
+      opens++;status(`Popover opens: ${opens}`);
+      document.querySelector("#portrait-frame")?.remove();
+      const frame=document.createElement("iframe");frame.id="portrait-frame";frame.title="Linked portrait";
+      // Use the production renderer. Only fixture URLs are substituted in QA.
+      const p=JSON.parse(decodeURIComponent(value.url.split("#")[1]));
+      if(p.url.startsWith("https://qa.invalid/")){
+        frame.src=`/qa/portrait.html#${encodeURIComponent(JSON.stringify(p))}`;
+      }else frame.src=value.url;
+      Object.assign(frame.style,{position:"fixed",left:`${value.anchorPosition.left}px`,top:`${value.anchorPosition.top}px`,width:`${value.width}px`,height:`${value.height}px`,border:"0",background:"transparent",zIndex:"3"});
+      document.body.append(frame);
     },
+  },
+  scene:{
+    isReady:async()=>ready,onReadyChange:subscribe("ready"),local:{deleteItems:async()=>{}},
+    items:{getItems:async()=>items,onChange:subscribe("items"),updateItems:async(ids:string[],fn:Function)=>{fn(items.filter(i=>ids.includes(i.id)));callbacks.items?.(items);}},
   },
 };
-const controller = createController(api, (source, dpi) => ({
-  id: `${ID}/portrait`, type: "BILLBOARD", image: source.image, grid: { dpi, offset: { x: 0, y: 0 } },
-  disableHit: true, locked: true, layer: "POPOVER", style: {},
-} as any), localStorage);
-await controller.start();
-const select = (ids: string[]) => {
-  selection = ids;
-  for (const id of ["a", "b"]) document.getElementById(id)!.setAttribute("aria-pressed", String(ids.includes(id)));
-  callbacks.player?.({ selection, role: "PLAYER" });
-};
-document.querySelector("#a")!.addEventListener("click", () => select(["a"]));
-document.querySelector("#b")!.addEventListener("click", () => select(["b"]));
-document.querySelector("#clear")!.addEventListener("click", () => select([]));
-document.querySelector("#multi")!.addEventListener("click", () => select(["a", "b"]));
-document.querySelector("#shape")!.addEventListener("click", () => select(["shape"]));
-document.querySelector("#delete")!.addEventListener("click", () => {
-  items = items.filter(item => !selection.includes(item.id));
-  callbacks.items?.(items);
+const controller=createController(api,localStorage); await controller.start();
+const select=(ids:string[])=>{selection=ids;for(const id of ["a","b"])document.getElementById(id)!.setAttribute("aria-pressed",String(ids.includes(id)));callbacks.player?.({selection,role:"PLAYER"});};
+for(const id of ["a","b"])document.getElementById(id)!.addEventListener("click",()=>select([id]));
+document.querySelector("#clear")!.addEventListener("click",()=>select([]));
+document.querySelector("#multi")!.addEventListener("click",()=>select(["a","b"]));
+document.querySelector("#shape")!.addEventListener("click",()=>select(["shape"]));
+document.querySelector("#delete")!.addEventListener("click",()=>{items=items.filter(i=>!selection.includes(i.id));callbacks.items?.(items);});
+document.querySelector("#scene")!.addEventListener("click",()=>{ready=!ready;callbacks.ready?.(ready);});
+document.querySelector("#pan")!.addEventListener("click",()=>{
+  pan=!pan;const board=document.querySelector<HTMLElement>("#board")!;
+  board.style.backgroundPosition=pan?"123px 78px":"0 0";
+  for(const el of document.querySelectorAll<HTMLElement>(".token"))el.style.transform=pan?"translate(100px,50px) scale(1.2)":"none";
 });
-document.querySelector("#scene")!.addEventListener("click", () => {
-  ready = !ready;
-  local = undefined;
-  draw();
-  callbacks.ready?.(ready);
-});
-document.querySelector("#pan")!.addEventListener("click", () => {
-  zoom = zoom === 1 ? 2 : 1; offset = offset ? 0 : 100; draw();
-});
-document.querySelector("#under")!.addEventListener("click", () => {
-  document.querySelector("#status")!.textContent = `Underlying clicks: ${++underClicks}`;
+document.querySelector("#under")!.addEventListener("click",()=>status("Underlying click"));
+window.addEventListener("storage",event=>{
+  if(event.key==="qa-link-result"&&event.newValue){const data=JSON.parse(event.newValue);const target=items.find(i=>i.id===data.id);if(target){target.metadata[PORTRAIT_KEY]=data.portrait;callbacks.items?.(items);}}
 });

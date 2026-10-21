@@ -1,6 +1,18 @@
 import type { Image, Item } from "@owlbear-rodeo/sdk";
 
 export const ID = "com.token-portrait";
+export const PORTRAIT_KEY = `${ID}/image`;
+export type Portrait = { url: string; width: number; height: number };
+export function portraitFrom(value: unknown): Portrait | undefined {
+  if (!value || typeof value !== "object") return;
+  const p = value as Portrait;
+  try {
+    const url = new URL(p.url);
+    if (url.protocol !== "https:" || url.username || url.password) return;
+    if (![p.width, p.height].every(v => Number.isFinite(v) && v > 0)) return;
+    return { url: url.href, width: p.width, height: p.height };
+  } catch { return; }
+}
 export type Settings = { side: "left" | "right"; enabled: boolean; size: number };
 export const defaults: Settings = { side: "right", enabled: true, size: 300 };
 

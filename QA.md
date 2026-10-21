@@ -1,54 +1,26 @@
-# QA inventory
+# QA 1.1.0 inventory
 
-The production extension has no custom settings panel. Its four controls are
-registered with Owlbear's native token context menu.
+- Assigned portrait differs from token thumbnail; unassigned tokens show nothing.
+- Screen position unchanged on camera pan/zoom; no popover reopen or camera API call.
+- Both corners; 3 sizes; hide/re-enable; deselect; multi-select; deletion; scene reload.
+- Native picker adapter: select, replace, cancel; scene switch while picker pending.
+- Link editor: valid HTTPS image, invalid HTTP, broken image, save metadata without changing token image.
+- Transparent portrait iframe and responsive fit; no border; desktop and small viewport.
+- Exploratory: rapid selection/pan/hide and resize; invalid saved metadata.
 
-| Claim / control | Functional check | Visual state / evidence |
-| --- | --- | --- |
-| Selected image appears | Select A then B using mouse and touch | Right corner, original aspect ratio |
-| Left / right | Right → left → right, re-enable after hide | Both corners, desktop and mobile |
-| Hide | Hide → select different image → right to restore | No residual image |
-| Size | Large → small → medium → large | Bounds and no distortion |
-| No selection / non-image | Clear selection, select shape | Portrait absent |
-| Multi-selection | Select A, add B, remove A | Stable current image, then B |
-| Transparent / click-through | Transparent asset and click beneath | No frame; underlying input responds |
-| Viewport tracking | Pan / zoom / resize | Same screen corner, same pixel size |
-| Scene lifecycle | Close / reopen, delete selected image | No stale portrait |
-| Settings persistence | Reload | Same side, size, enabled state |
-| Native Move / Measure movement | Requires live Owlbear room | Do not claim without live test |
+Local test harness is an SDK adapter, not real Owlbear. Production popover host hit testing and native picker must be checked separately. Portrait iframe cannot promise click-through to the map.
 
-Exploratory: rapid switching during hide/resize; tiny landscape viewport;
-missing or invalid image dimensions; hidden token as PLAYER versus GM.
+## Results 2026-10-21
 
-Local harness checks the actual controller through an SDK test adapter. It does
-not prove Owlbear's rendering, native tool events, fog/layer behavior, or toolbar
-placement. Live host signoff must be recorded separately.
+- 9 unit tests passed; production TypeScript/Vite build passed.
+- Browser plugin used for mouse controls in SDK adapter at 1280x720.
+- Pan/zoom: portrait bounds identical before/after (x 991.45, y 320, w 205, h 300), popover open count unchanged at 1. No camera transform calls allowed by adapter/tests.
+- Selected Amber token displayed separate Blue artwork. Unassigned/cleared selection hides portrait.
+- Left/right, hide/restore, 180/240/300 sizes, native-library adapter selection, clear mapping, multi-selection, deselection and scene close/reopen exercised.
+- Actual URL editor: rejected HTTP, saved valid HTTPS image via metadata, rejected broken HTTPS image without replacing saved art. Actual production portrait renderer displayed the linked image.
+- Separate screenshot review found no added border, distorted aspect ratio, portrait clipping or overlap with reserved simulated toolbar strips on desktop.
+- Exploratory changes included repeated pan, corner switches, multi-selection, non-image and scene switches.
+- Live Owlbear host integration remains unverified. This session's browser has no existing signed-in Owlbear tab. No live deployment performed.
 
-## Results — 2026-10-21
-
-- `npm test`: 6/6 passed. Includes layout/aspect ratio across 5 sizes, invalid
-  dimensions, corrupt settings, multi-selection, deleted/hidden images, GM
-  visibility, idle write suppression and a scene switch during an in-flight read.
-- `npm run build`: TypeScript and production Vite build passed.
-- Persistent Playwright session with installed Chrome: all four context-menu
-  adapter controls exercised, including full size cycle and hide/re-enable.
-  Mouse and mobile touch selection passed. Deselect/non-image selection,
-  multi-select, delete, scene close/reopen, persistence and pan/zoom passed.
-- Exploratory interaction: 32.2 seconds, 23 repeated cycles of side/hide/size,
-  token switch, multi-select, deselect and pan/zoom. No page errors.
-- Separate visual review: right and left desktop; right and left 390×844
-  mobile; 844×390 landscape; native window as launched (1459×991 outer,
-  1444×898 viewport). No portrait clipping, distortion, added frame, or
-  overlap with the simulated side/bottom reserved strips in settled states.
-  Native window and mobile document scroll dimensions equal their viewport.
-- A screenshot taken immediately after a viewport resize initially caught
-  stale positioning. Rechecked after the polling update and captured the
-  settled landscape screenshot. This is why viewport-follow latency is
-  explicitly documented, rather than claiming perfectly fixed positioning.
-- Clicking a button under the portrait passed in the adapter. Real Owlbear
-  hit-testing remains unverified; production sets SDK `disableHit: true`.
-- Native Owlbear integration: NOT VERIFIED. The public site's Play Free
-  link leads to account signup; the isolated QA browser has no signed-in room.
-  Move/Measure movement and real tool occlusion are not signed off.
-- Screenshots: `qa/screenshots/desktop-right.png`, `desktop-left.png`,
-  `mobile-right.png`, `mobile-left.png`, `landscape.png`, `native-window.png`.
+- Compact 390x620 iframe viewport visually reviewed: portrait fully visible, no frame or distortion, reserved bottom/side areas clear. Numeric layout tests cover 390x844, 844x390, 320x568 and 240x240. Browser DOM scope does not expose nested contentDocument, so nested numeric inspection was unavailable.
+- Browser QA tabs and local dev server closed after verification.

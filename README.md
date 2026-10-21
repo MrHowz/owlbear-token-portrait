@@ -1,64 +1,63 @@
-# Token Portrait 1.0.0
+# Token Portrait 1.1.0
 
-Extension สำหรับ Owlbear Rodeo: แสดงภาพของ Token ที่ตัวเองเลือกไว้
-บริเวณมุมล่างซ้ายหรือขวาในลักษณะภาพตัวละครคล้าย VTuber
-ไม่มีหน้าต่างตั้งค่าแยก ไม่มีพื้นหลังหรือกรอบที่ Extension เพิ่มให้
+## เปลี่ยนจาก 1.0.0
 
-## ติดตั้ง
+- เปลี่ยนจาก Billboard ในฉากที่คอยชดเชยกล้อง เป็น Popover โปร่งใสที่ยึดพิกัดหน้าจอ
+- ไม่อ่านตำแหน่งกล้อง ไม่ชดเชยการ pan/zoom และไม่เปิดภาพซ้ำระหว่างเลื่อนแผนที่
+- แสดงเฉพาะรูป Portrait ที่ผูกไว้กับ Token ไม่ใช้รูป Token เป็นภาพสำรอง
+- เลือกรูปจากคลัง Owlbear ด้วย image picker มาตรฐาน หรือใส่ลิงก์ HTTPS
+- รูปผูกกับ metadata ของ Token ในฉาก จึงยังอยู่หลังโหลดห้องใหม่ และผู้เล่นที่เลือก Token เดียวกันใช้รูปที่กำหนดไว้ได้
+- การเลือก Token และตำแหน่ง/ขนาดภาพยังเป็นของผู้ใช้แต่ละคน
 
-1. แตกไฟล์ `token-portrait-deploy-1.0.0.zip`
-2. อัปโหลดเนื้อหาใน ZIP ไปยัง **root ของเว็บไซต์ HTTPS สำหรับไฟล์ static**
-   ต้องเปิด `/manifest.json`, `/background.html`, `/icon.svg` และ `/assets/...` ได้
-   ห้ามตั้ง `X-Frame-Options: DENY/SAMEORIGIN` เพราะ Owlbear โหลด Extension ใน iframe
-3. เพิ่ม Extension ใน Owlbear ด้วย URL `https://YOUR-HOST/manifest.json`
-   แล้วเปิดใช้งานในห้องของคุณ
-4. เปิดฉากแล้วเลือก Token ที่เป็นรูปภาพ ภาพจะปรากฏมุมขวาล่าง
+## อัปเดต GitHub และ Cloudflare Pages
 
-ZIP ไม่สามารถติดตั้งลง Owlbear โดยตรงได้ ต้องมี URL ของ manifest ที่โฮสต์แล้ว
-รุ่นนี้ใช้ path จาก root จึงไม่ควรติดตั้งใต้ subdirectory ของเว็บไซต์
+1. แตก `token-portrait-source-1.1.0.zip`
+2. อัปโหลดไฟล์และโฟลเดอร์ภายในไปทับที่ root ของ repository เดิม แล้ว Commit
+3. ตรวจว่ามี `portrait.html`, `link.html`, `background.html` และ `package.json` ที่หน้าแรก
+4. Cloudflare Pages ใช้ Build command `npm run build`, Output `dist`, Root เว้นว่าง
+5. รอ deployment สำเร็จ เปิด manifest URL เดิม ต้องเห็น version `1.1.0`
+6. โหลดห้อง Owlbear ใหม่ หากข้อมูล Extension ยังเก่า ให้ถอดแล้วเพิ่มด้วย manifest URL เดิม
+
+URL เดิม: https://owlbear-token-portrait.pages.dev/manifest.json
+
+โฟลเดอร์นี้ยังไม่ได้ push/deploy ขึ้นบัญชี GitHub หรือ Cloudflare ของคุณ
+ไฟล์ deploy ZIP เป็นอีกทางเลือกสำหรับโฮสต์ไฟล์ที่ build แล้ว ส่วน Git integration ให้ใช้ source ZIP
 
 ## วิธีใช้
 
-เลือก Token แล้วใช้รายการใน **context menu มาตรฐานของ Owlbear**:
+เลือก Token แล้วเปิดเมนูของ Token:
 
-- `Portrait · มุมล่างซ้าย` — แสดงภาพด้านซ้าย และเปิดภาพกลับมาหากเคยซ่อน
-- `Portrait · มุมล่างขวา` — แสดงภาพด้านขวา และเปิดภาพกลับมาหากเคยซ่อน
-- `Portrait · ซ่อนภาพ` — ปิดภาพ จนกว่าจะเลือกคำสั่งซ้ายหรือขวาอีกครั้ง
-- `Portrait · เปลี่ยนขนาด เล็ก / กลาง / ใหญ่` — วนขนาด 180 / 240 / 300 px
+- **Portrait · เลือกรูปจากคลัง Owlbear** เปิดตัวเลือกภาพมาตรฐานของ Owlbear แล้วเลือกรูปที่ต้องการ
+- **Portrait · ใส่ลิงก์รูปภาพ** เปิดช่องลิงก์เล็กๆ ใน context menu ใส่ลิงก์ HTTPS ของรูปโดยตรงแล้วกดบันทึก
+- **Portrait · ล้างรูปที่ผูกไว้** ลบเฉพาะการผูก Portrait ไม่ลบรูป Token หรือไฟล์ในคลัง
+- **Portrait · มุมล่างซ้าย / มุมล่างขวา** เลือกตำแหน่งและเปิดภาพกลับมาหากเคยซ่อน
+- **Portrait · ซ่อนภาพ** ปิดการแสดงผลเฉพาะผู้ใช้คนนี้
+- **Portrait · เปลี่ยนขนาด** วนขนาด 180 / 240 / 300 px ปรับเล็กลงเมื่อหน้าจอไม่พอ
 
-ขนาดเป็นเพดานความสูง ภาพจะเล็กลงตามสัดส่วนเพื่อให้พอดีกับหน้าจอ
-ตัวเลือกบันทึกในเบราว์เซอร์นี้ และมีผลเฉพาะหน้าจอของผู้ใช้คนนี้
-การเลือกใหม่ไม่เปลี่ยนภาพของผู้เล่นอื่น
+ถ้าเลือกหลาย Token แล้วผูกรูป ภาพเดียวกันจะผูกกับ Token รูปภาพทั้งหมดที่เลือก
+ต้องมีสิทธิ์ UPDATE ของ Token เพื่อกำหนด/ล้างรูป ภาพต้นฉบับและตำแหน่ง Token ไม่ถูกแก้
+เมื่อเลือกหลาย Token จะแสดงภาพปัจจุบันต่อถ้า Token นั้นยังถูกเลือก
+Token ที่ยังไม่มีรูป Portrait จะไม่แสดงภาพ
 
-ยกเลิกเลือกแล้วภาพหาย หากเลือกหลาย Token จะคงภาพปัจจุบันไว้ถ้ายังอยู่ในการเลือก
-ถ้าไม่อยู่แล้ว จะใช้รูปภาพรายการสุดท้ายในการเลือก
-ใช้ภาพต้นฉบับของ Token โดยไม่ตัด ไม่หมุนตาม Token และไม่เพิ่มกรอบ
-หากต้องการภาพตัวละครแบบไม่มีพื้นหลัง ควรใช้ไฟล์ต้นฉบับ PNG/WebP โปร่งใส
-กรอบหรือพื้นหลังที่เป็นส่วนหนึ่งของไฟล์ต้นฉบับจะยังแสดงอยู่
-รุ่นนี้ไม่ได้เพิ่มการขยับปากหรือ animation แบบ VTuber
+ใช้ PNG/WebP โปร่งใสเมื่อต้องการตัวละครไร้พื้นหลัง ระบบไม่ลบพื้นหลัง/กรอบที่อยู่ในไฟล์ภาพเอง
+URL ต้องเปิดเป็นรูปได้โดยไม่เข้าสู่ระบบ ไม่ใช่ลิงก์หน้าดูไฟล์หรือหน้าเว็บ
+รูปที่เลือกในคลังใช้ URL ของ Owlbear โดยตรง ไม่มีการดาวน์โหลดมาโฮสต์ใหม่
 
-## ข้อจำกัดที่ต้องรู้
+## ข้อจำกัดและผลทดสอบ
 
-- รับสถานะเลือกผ่าน `OBR.player.onChange` โดยไม่เปลี่ยนเครื่องมือ Move/Measure
-  หากเครื่องมือส่ง selection ภาพจะตามการเลือกนั้น แต่ SDK ไม่เปิด global
-  pointer-down/drag event ของเครื่องมืออื่น จึง **ไม่รับประกันการจับ Token
-  ด้วยเครื่องมือทุกชนิดเมื่อเครื่องมือนั้นไม่ส่ง selection**
-- ภาพเป็น local Billboard ที่ตั้ง `disableHit: true` เพื่อไม่รับการคลิก
-  และอยู่ใน layer `POPOVER` ไม่แก้ไขภาพหรือข้อมูล Token ของฉากร่วม
-- SDK 3.1 ไม่มี viewport change event จึงติดตาม viewport แบบเรียงลำดับทุก 80 ms
-  ขณะลากกล้องเร็วอาจเห็นภาพตามมุมช้าชั่วครู่ ไม่ใช่ DOM overlay ที่ล็อกตำแหน่งทันที
-- เว้นด้านข้าง 64–84 px และด้านล่าง 76–100 px แต่ SDK ไม่เปิดตำแหน่ง
-  ของแผง UI ทั้งหมด จึงไม่รับประกันว่าไม่ทับแผงที่เปิดขยายหรือ UI จาก Extension อื่น
-- ทดสอบด้วย Playwright กับ SDK adapter ในเครื่องแล้ว แต่ **ยังไม่ได้ทดสอบ
-  ในห้อง Owlbear จริง** เพราะ browser ทดสอบไม่มี session ที่ลงชื่อเข้าใช้
-  จึงยังไม่ยืนยัน native Move, Measure movement, การ render Billboard จริง,
-  layer/fog และตำแหน่งเทียบกับ toolbar จริงบนทุกอุปกรณ์
-- `pagehide` พยายามล้างภาพ local และเมนู เมื่อถอด Extension แล้วมีภาพค้าง
-  ให้โหลดห้องใหม่ การ unload frame ไม่รับประกันว่า async cleanup จะจบ
+- Popover ยึดตำแหน่งหน้าจอ แต่ iframe อาจรับการคลิกในพื้นที่สี่เหลี่ยมของภาพ จึงไม่รับประกัน click-through เหมือนรุ่น Billboard
+- เว้นแถบเครื่องมือด้านข้างและด้านล่างตามขนาดหน้าจอ ไม่อ้างว่าเลี่ยงได้ทุกแผงที่ขยายหรือ Extension อื่น
+- การ resize หน้าต่างตรวจทุก 350 ms; pan/zoom ไม่ทำให้ตำแหน่งภาพเปลี่ยน
+- รับ selection ของ Owlbear จึงยังขึ้นกับเครื่องมือ Move/Measure ว่าส่ง selection หรือไม่
+- การผูกภาพเป็น metadata ของฉาก; URL ภาพไม่ควรเป็นลิงก์ลับที่ไม่ต้องการให้ผู้ร่วมฉากเข้าถึง
+- ไม่มีการเพิ่ม animation หรือขยับปาก
+- ทดสอบ unit tests 9 รายการ, build TypeScript และ browser QA ผ่าน SDK adapter
+- ทดสอบ URL editor และ renderer จริงด้วยลิงก์ HTTPS สำเร็จ และตรวจ HTTP/ลิงก์เสีย
+- ยังไม่ได้ทดสอบ Popover/picker ภายในห้อง Owlbear ที่ลงชื่อเข้าใช้จริง
 
-## พัฒนาและทดสอบ
+## พัฒนา
 
-ใช้ Node.js 22.18+:
+Node.js 22.18+:
 
 ```sh
 npm ci
@@ -67,15 +66,8 @@ npm run build
 npm run dev -- --port 5190
 ```
 
-เปิด `http://127.0.0.1:5190/qa/index.html` เพื่อใช้ test harness
-หน้าทดสอบนี้เป็น UI จำลองเท่านั้น ไม่ถูก build หรือติดตั้งไปกับ Extension
-ผลทดสอบและภาพหลักฐานอยู่ใน `QA.md` และ `qa/screenshots`
-ไฟล์สำหรับโฮสต์ถูกสร้างใน `dist`
+เปิด `/qa/index.html` สำหรับ SDK test harness, `/qa/compact.html` สำหรับกรอบหน้าจอเล็ก
+หน้าทดสอบไม่รวมใน dist ที่ deploy
 
-## API อ้างอิง
-
-- [Player selection](https://docs.owlbear.rodeo/extensions/apis/player/)
-- [Local Billboard](https://docs.owlbear.rodeo/extensions/reference/items/billboard/)
-- [Item / disableHit](https://docs.owlbear.rodeo/extensions/reference/items/item/)
-- [Viewport](https://docs.owlbear.rodeo/extensions/apis/viewport/)
-- [Extension architecture](https://docs.owlbear.rodeo/extensions/getting-started/)
+API: https://docs.owlbear.rodeo/extensions/apis/popover/
+Image picker: https://docs.owlbear.rodeo/extensions/apis/assets/

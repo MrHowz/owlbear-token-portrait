@@ -1,124 +1,83 @@
 import type OBR from "@owlbear-rodeo/sdk";
-import type { Billboard, Image, Item } from "@owlbear-rodeo/sdk";
-import { chooseImage, defaults, ID, layout, settingsFrom, type Settings } from "./model.ts";
+import type { Item, ContextMenuContext } from "@owlbear-rodeo/sdk";
+import { chooseImage, defaults, ID, layout, settingsFrom, PORTRAIT_KEY, portraitFrom, type Settings } from "./model.ts";
 
-type Api = typeof OBR;
-type MakeBillboard = (image: Image, dpi: number) => Billboard;
-
-export function createController(api: Api, makeBillboard: MakeBillboard, storage: Pick<Storage, "getItem" | "setItem">) {
+export function createController(api: typeof OBR, storage: Pick<Storage, "getItem" | "setItem">) {
   let settings = { ...defaults };
-  try { settings = settingsFrom(JSON.parse(storage.getItem(ID) ?? "null")); } catch { /* private browsing */ }
-  let items: Item[] = [];
-  let selection: string[] = [];
+  try { settings = settingsFrom(JSON.parse(storage.getItem(ID) ?? "null")); } catch {}
+  let items: Item[] = [], selection: string[] = [];
   let previous: string | undefined;
-  let ready = false;
-  let epoch = 0;
-  let busy = false;
-  let pendingRender = Promise.resolve();
-  let installed = false;
-  let signature = "";
-  let dpi = 150;
-  let role = "PLAYER";
+  let ready = false, disposed = false, epoch = 0, role = "PLAYER";
+  let signature = "", open = false;
+  let queue = Promise.resolve();
   let timer: ReturnType<typeof setTimeout> | undefined;
-  let disposed = false;
-  let reported = false;
-  const unsubscribers: (() => void)[] = [];
-
-  function report(error: unknown) {
+  const unsubscribe: (() => void)[] = [];
+  const menuIds = ["left", "right", "hide", "size", "choose", "link", "clear"];
+  const popoverId = `${ID}/screen`;
+  const report = (error: unknown) => {
     console.error("Token Portrait:", error);
-    if (!reported) {
-      reported = true;
-      void api.notification.show("Token Portrait: ไม่สามารถแสดงภาพได้ ลองเปิดฉากใหม่", "ERROR").catch(console.error);
-    }
+    void api.notification.show("Portrait: ทำรายการไม่สำเร็จ ตรวจสิทธิ์แก้ไข Token และลิงก์ภาพ", "ERROR").catch(console.error);
+  };
+  const close = async () => {
+    if (open) await api.popover.close(popoverId);
+    open = false; signature = "";
+  };
+  async function draw() {
+    if (disposed || !ready) { await close(); return; }
+    const revision = epoch;
+    const target = chooseImage(items, selection, previous);
+    previous = target?.id;
+    const portrait = portraitFrom(target?.metadata?.[PORTRAIT_KEY]);
+    if (!target || !portrait || !settings.enabled || (!target.visible && role !== "GM")) { await close(); return; }
+    const [width, height] = await Promise.all([api.viewport.getWidth(), api.viewport.getHeight()]);
+    if (revision !== epoch || disposed || !ready) return;
+    const rect = layout(width, height, portrait.width, portrait.height, settings);
+    if (!rect) { await close(); return; }
+    const next = JSON.stringify([portrait, rect.x, rect.y, rect.width, rect.height]);
+    if (next === signature) return;
+    // Screen coordinates only. NEVER read or compensate for the camera transform.
+    await api.popover.open({
+      id: popoverId, url: `/portrait.html#${encodeURIComponent(JSON.stringify(portrait))}`,
+      width: Math.ceil(rect.width), height: Math.ceil(rect.height),
+      anchorReference: "POSITION", anchorPosition: { left: rect.x, top: rect.y },
+      anchorOrigin: { horizontal: "LEFT", vertical: "TOP" },
+      transformOrigin: { horizontal: "LEFT", vertical: "TOP" },
+      hidePaper: true, disableClickAway: true, marginThreshold: 0,
+    });
+    open = true; signature = next;
   }
-
-  async function render() {
-    if (busy || !ready || disposed) return;
-    busy = true;
-    let complete!: () => void;
-    pendingRender = new Promise<void>(resolve => { complete = resolve; });
-    const currentEpoch = epoch;
-    try {
-      const target = chooseImage(items, selection, previous);
-      previous = target?.id;
-      if (!target || !settings.enabled || (!target.visible && role !== "GM")) {
-        if (installed) await api.scene.local.deleteItems([`${ID}/portrait`]);
-        installed = false;
-        signature = "";
-        return;
-      }
-      const [width, height] = await Promise.all([api.viewport.getWidth(), api.viewport.getHeight()]);
-      const rect = layout(width, height, target.image.width, target.image.height, settings);
-      if (!rect) {
-        if (installed) await api.scene.local.deleteItems([`${ID}/portrait`]);
-        installed = false;
-        signature = "";
-        return;
-      }
-      const position = await api.viewport.inverseTransformPoint({ x: rect.x, y: rect.y });
-      if (currentEpoch !== epoch || !ready || disposed) return;
-      const next = makeBillboard(target, dpi);
-      next.position = position;
-      next.scale = { x: rect.ratio, y: rect.ratio };
-      const nextSignature = JSON.stringify([target.id, target.image, position, rect.ratio, dpi]);
-      if (nextSignature === signature) return;
-      if (installed) {
-        await api.scene.local.updateItems([next.id], drafts => {
-          for (const draft of drafts) Object.assign(draft, next);
-        });
-      } else {
-        await api.scene.local.addItems([next]);
-        installed = true;
-      }
-      signature = nextSignature;
-      reported = false;
-    } catch (error) {
-      if (ready && currentEpoch === epoch) report(error);
-    } finally {
-      busy = false;
-      complete();
-    }
+  function render() {
+    queue = queue.then(draw).catch(report);
+    return queue;
   }
-
   async function setReady(value: boolean) {
-    const currentEpoch = ++epoch;
-    ready = false;
-    previous = undefined;
-    selection = [];
-    items = [];
-    signature = "";
-    installed = false;
-    if (!value || disposed) return;
-    try {
-      await pendingRender;
-      if (currentEpoch !== epoch || disposed) return;
-      installed = false;
-      // Remove a stale local portrait left by a background-frame reload.
-      await api.scene.local.deleteItems([`${ID}/portrait`]);
-      const result = await Promise.all([
-        api.scene.items.getItems(), api.player.getSelection(), api.scene.grid.getDpi(), api.player.getRole(),
-      ]);
-      if (currentEpoch !== epoch || disposed) return;
-      [items, selection, dpi, role] = [result[0], result[1] ?? [], result[2], result[3]];
-      ready = true;
-      await render();
-    } catch (error) { if (currentEpoch === epoch) report(error); }
-  }
-
-  async function change(patch: Partial<Settings>) {
-    settings = settingsFrom({ ...settings, ...patch });
-    try { storage.setItem(ID, JSON.stringify(settings)); } catch { /* session-only settings */ }
+    const revision = ++epoch;
+    ready = false; items = []; selection = []; previous = undefined;
+    await render();
+    if (!value || disposed || revision !== epoch) return;
+    // Migration: remove the v1 camera-follow billboard, including after reload.
+    await api.scene.local.deleteItems([`${ID}/portrait`]);
+    const result = await Promise.all([api.scene.items.getItems(), api.player.getSelection(), api.player.getRole()]);
+    if (revision !== epoch || disposed) return;
+    [items, selection, role] = [result[0], result[1] ?? [], result[2]];
+    ready = true;
     await render();
   }
-
+  async function change(patch: Partial<Settings>) {
+    settings = settingsFrom({ ...settings, ...patch });
+    try { storage.setItem(ID, JSON.stringify(settings)); } catch {}
+    await render();
+  }
   async function start() {
-    const menu = async (key: string, label: string, action: () => Promise<void>) => {
+    // A previous background instance may have left a screen popover behind.
+    await api.popover.close(popoverId);
+    async function menu(key: string, label: string, action: (context: ContextMenuContext) => Promise<void>, edit = false) {
       await api.contextMenu.create({
         id: `${ID}/${key}`,
-        icons: [{ icon: `/icons/${key}.svg`, label, filter: { some: [{ key: "type", value: "IMAGE" }] } }],
-        onClick: () => { void action().catch(report); },
+        icons: [{ icon: `/icons/${key}.svg`, label, filter: { some: [{ key: "type", value: "IMAGE" }], ...(edit ? { permissions: ["UPDATE" as const] } : {}) } }],
+        onClick: context => { void action(context).catch(report); },
       });
-    };
+    }
     await menu("left", "Portrait · มุมล่างซ้าย", () => change({ side: "left", enabled: true }));
     await menu("right", "Portrait · มุมล่างขวา", () => change({ side: "right", enabled: true }));
     await menu("hide", "Portrait · ซ่อนภาพ", () => change({ enabled: false }));
@@ -128,36 +87,43 @@ export function createController(api: Api, makeBillboard: MakeBillboard, storage
       await change({ size });
       await api.notification.show(`Portrait: ${size}px`, "INFO");
     });
-    unsubscribers.push(
-      api.player.onChange(player => {
-        selection = player.selection ?? [];
-        role = player.role;
-        void render();
-      }),
+    await menu("choose", "Portrait · เลือกรูปจากคลัง Owlbear", async context => {
+      const revision = epoch;
+      const ids = context.items.filter(item => item.type === "IMAGE").map(item => item.id);
+      const [asset] = await api.assets.downloadImages(false);
+      if (!asset || revision !== epoch || !ready || disposed) return;
+      const portrait = portraitFrom(asset.image);
+      if (!portrait) throw new Error("Invalid portrait image");
+      await api.scene.items.updateItems(ids, drafts => {
+        for (const item of drafts) item.metadata[PORTRAIT_KEY] = portrait;
+      });
+      await change({ enabled: true });
+    }, true);
+    await api.contextMenu.create({
+      id: `${ID}/link`, icons: [{ icon: "/icons/link.svg", label: "Portrait · ใส่ลิงก์รูปภาพ", filter: { some: [{ key: "type", value: "IMAGE" }], permissions: ["UPDATE"] } }],
+      embed: { url: "/link.html", height: 190 },
+    });
+    await menu("clear", "Portrait · ล้างรูปที่ผูกไว้", async context => {
+      const ids = context.items.filter(item => item.type === "IMAGE").map(item => item.id);
+      await api.scene.items.updateItems(ids, drafts => { for (const item of drafts) delete item.metadata[PORTRAIT_KEY]; });
+    }, true);
+    unsubscribe.push(
+      api.player.onChange(player => { selection = player.selection ?? []; role = player.role; void render(); }),
       api.scene.items.onChange(value => { items = value; void render(); }),
-      api.scene.grid.onChange(grid => { dpi = grid.dpi; signature = ""; void render(); }),
-      api.scene.onReadyChange(value => { void setReady(value); }),
+      api.scene.onReadyChange(value => { void setReady(value).catch(report); }),
     );
-    const initEpoch = epoch;
-    const initialReady = await api.scene.isReady();
-    if (initEpoch === epoch) await setReady(initialReady);
-    // SDK 3.1 has no viewport change subscription. Serialize polling so slow
-    // hosts never accumulate overlapping SDK calls. No writes when unchanged.
-    const tick = async () => {
-      await render();
-      if (!disposed) timer = setTimeout(tick, 80);
-    };
-    timer = setTimeout(tick, 80);
+    const revision = epoch;
+    const initial = await api.scene.isReady();
+    if (revision === epoch) await setReady(initial);
+    // Only monitor window size. Panning and zooming cause zero popover writes.
+    const tick = async () => { await render(); if (!disposed) timer = setTimeout(tick, 350); };
+    timer = setTimeout(tick, 350);
   }
-
   async function stop() {
-    disposed = true;
-    ++epoch;
-    clearTimeout(timer);
-    unsubscribers.forEach(unsubscribe => unsubscribe());
-    await pendingRender;
-    if (ready) await api.scene.local.deleteItems([`${ID}/portrait`]);
-    for (const key of ["left", "right", "hide", "size"]) await api.contextMenu.remove(`${ID}/${key}`);
+    disposed = true; ++epoch; clearTimeout(timer);
+    unsubscribe.forEach(fn => fn());
+    await render();
+    for (const key of menuIds) await api.contextMenu.remove(`${ID}/${key}`);
   }
   return { start, stop, render, getSettings: () => ({ ...settings }) };
 }
